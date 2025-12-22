@@ -125,43 +125,6 @@ function addWall(x: number, y: number, z: number, sx: number, sy: number, sz: nu
   addWall(0, wallH * 0.5, -(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
   addWall(0, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
 
-  // --- Ramps (fixed) ---
-  function addRamp(x: number, y: number, z: number, sx: number, sy: number, sz: number, pitchDeg: number, yawDeg = 0) {
-    const p = tiltedPos(x, y, z);
-
-    const rampRot = tiltQ.clone().multiply(
-      new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(THREE.MathUtils.degToRad(pitchDeg), THREE.MathUtils.degToRad(yawDeg), 0)
-      )
-    );
-    const rampR = rapierQuatFromThree(rampRot);
-
-    const body = world.createRigidBody(
-      RAPIER.RigidBodyDesc.fixed()
-        .setTranslation(p.x, p.y, p.z)
-        .setRotation(rampR)
-    );
-
-    world.createCollider(
-      RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5)
-        .setFriction(0.9)
-        .setRestitution(0.2),
-      body
-    );
-
-    const mesh = addMesh(
-      new THREE.Mesh(
-        new THREE.BoxGeometry(sx, sy, sz),
-        new THREE.MeshStandardMaterial({ metalness: 0.05, roughness: 0.85, color: 0x333366 })
-      )
-    );
-    mesh.position.copy(p);
-    mesh.quaternion.copy(rampRot);
-  }
-
-  addRamp(-2.25, 0.25, 2.0, 3.5, 0.35, 2.2, -12, 10);
-  addRamp(2.25, 0.25, 3.0, 3.5, 0.35, 2.2, -14, -10);
-
   // --- Bumpers (fixed) ---
 function addBumper(x: number, z: number, radius: number) {
   const p = tiltedPos(x, 0.35, z);
@@ -204,11 +167,11 @@ function addBumper(x: number, z: number, radius: number) {
   const flippers: Flipper[] = [];
 
   function addFlipper(isLeft: boolean) {
-    const length = 2.6;
+    const length = 2.25;
     const thickness = 0.28;
     const width = 0.5;
     const direction = isLeft ? 1 : -1;
-    const pivot = new THREE.Vector3(isLeft ? -2.0 : 2.0, 0.25, 6.0);
+    const pivot = new THREE.Vector3(isLeft ? -2.5 : 2.5, 0.25, 6.0);
 
     const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
     const centerPos = tiltedPos(pivot.x + direction * (length * 0.5), pivot.y, pivot.z);
@@ -257,10 +220,10 @@ function addBumper(x: number, z: number, radius: number) {
     const joint = world.createImpulseJoint(jointData, pivotBody, body, true);
     const motorJoint = joint as MotorizedJoint;
 
-    const restAngle = direction * 0.2;
-    const fireAngle = direction * -0.85;
-    const min = Math.min(restAngle, fireAngle) - 0.1;
-    const max = Math.max(restAngle, fireAngle) + 0.1;
+    const restAngle = direction * -0.85;
+    const fireAngle = direction * 0.2;
+    const min = Math.min(restAngle, fireAngle) - 0.01;
+    const max = Math.max(restAngle, fireAngle) + 0.01;
     motorJoint.setLimits(min, max);
     motorJoint.configureMotorPosition(restAngle, 90, 6);
 
@@ -311,12 +274,12 @@ function addBumper(x: number, z: number, radius: number) {
     if (e.code === "KeyR") resetBall();
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 120, 10);
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 500, 10);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
       for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 120, 10);
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 500, 10);
       }
     }
   });
@@ -324,12 +287,12 @@ function addBumper(x: number, z: number, radius: number) {
   window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 90, 8);
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 500, 8);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
       for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 90, 8);
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 500, 8);
       }
     }
   });
