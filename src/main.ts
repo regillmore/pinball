@@ -7,6 +7,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `<div id="hud">
   <div><b>Pinball Physics Sandbox</b></div>
   <div>Space: launch</div>
+  <div>←/→: flippers</div>
   <div>R: reset</div>
 </div>`;
 
@@ -152,6 +153,87 @@ function addBumper(x: number, z: number, radius: number) {
   addBumper(-2.0, 1.0, 0.45);
   addBumper(+2.0, 2.5, 0.45);
 
+  // --- Flippers (dynamic, jointed) ---
+  type MotorizedJoint = RAPIER.ImpulseJoint & {
+    configureMotorPosition(targetPos: number, stiffness: number, damping: number): void;
+    setLimits(min: number, max: number): void;
+  };
+  type Flipper = {
+    body: RAPIER.RigidBody;
+    joint: MotorizedJoint;
+    restAngle: number;
+    fireAngle: number;
+  };
+  const flippers: Flipper[] = [];
+
+  function addFlipper(isLeft: boolean) {
+    const length = 2.25;
+    const thickness = 0.28;
+    const width = 0.5;
+    const direction = isLeft ? 1 : -1;
+    const pivot = new THREE.Vector3(isLeft ? -2.5 : 2.5, 0.25, 6.0);
+
+    const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
+    const centerPos = tiltedPos(pivot.x + direction * (length * 0.5), pivot.y, pivot.z);
+
+    const yaw = THREE.MathUtils.degToRad(isLeft ? 20 : -20);
+    const flipperRot = tiltQ.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)));
+    const flipperR = rapierQuatFromThree(flipperRot);
+
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(centerPos.x, centerPos.y, centerPos.z)
+        .setRotation(flipperR)
+        .setLinearDamping(0.6)
+        .setAngularDamping(2.0)
+        .setCcdEnabled(true)
+        .setCanSleep(false)
+    );
+
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(length * 0.5, thickness * 0.5, width * 0.5)
+        .setFriction(0.9)
+        .setRestitution(0.2),
+      body
+    );
+
+    const mesh = addMesh(
+      new THREE.Mesh(
+        new THREE.BoxGeometry(length, thickness, width),
+        new THREE.MeshStandardMaterial({ color: isLeft ? 0xff5555 : 0x55aaff, roughness: 0.35 })
+      )
+    );
+    mesh.position.copy(centerPos);
+    mesh.quaternion.copy(flipperRot);
+
+    const pivotBody = world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(pivotPos.x, pivotPos.y, pivotPos.z)
+        .setRotation(flipperR)
+    );
+
+    const jointData = RAPIER.JointData.revolute(
+      { x: 0, y: 0, z: 0 },
+      { x: -direction * (length * 0.5), y: 0, z: 0 },
+      { x: 0, y: 1, z: 0 }
+    );
+    const joint = world.createImpulseJoint(jointData, pivotBody, body, true);
+    const motorJoint = joint as MotorizedJoint;
+
+    const restAngle = direction * -0.85;
+    const fireAngle = direction * 0.2;
+    const min = Math.min(restAngle, fireAngle) - 0.01;
+    const max = Math.max(restAngle, fireAngle) + 0.01;
+    motorJoint.setLimits(min, max);
+    motorJoint.configureMotorPosition(restAngle, 90, 6);
+
+    flippers.push({ body, joint: motorJoint, restAngle, fireAngle });
+    syncPairs.push({ body, mesh });
+  }
+
+  addFlipper(true);
+  addFlipper(false);
+
   // --- Ball (dynamic) ---
   const ballRadius = 0.25;
   const ballMesh = addMesh(new THREE.Mesh(
@@ -190,6 +272,29 @@ function addBumper(x: number, z: number, radius: number) {
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space") launchBall();
     if (e.code === "KeyR") resetBall();
+    if (e.code === "ArrowLeft" || e.code === "KeyA") {
+      for (const f of flippers) {
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 500, 10);
+      }
+    }
+    if (e.code === "ArrowRight" || e.code === "KeyD") {
+      for (const f of flippers) {
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 500, 10);
+      }
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowLeft" || e.code === "KeyA") {
+      for (const f of flippers) {
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 500, 8);
+      }
+    }
+    if (e.code === "ArrowRight" || e.code === "KeyD") {
+      for (const f of flippers) {
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 500, 8);
+      }
+    }
   });
 
   // --- Fixed timestep loop ---
