@@ -1,2 +1,2 @@
 # pinball
-WebGPU Pinball
+WebGL2 Pinball
