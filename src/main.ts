@@ -63,7 +63,7 @@ async function main() {
   const wallT = 0.25;
 
   // Tilt the playfield slightly so the ball rolls “down” +Z
-  const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(10), 0, 0));
+  const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(6.5), 0, 0));
   const tiltQ = tilt;
   const tiltR = rapierQuatFromThree(tiltQ);
 
@@ -92,31 +92,31 @@ async function main() {
   }
 
   // --- Walls (fixed) ---
-function addWall(x: number, y: number, z: number, sx: number, sy: number, sz: number) {
-  const p = tiltedPos(x, y, z);
+  function addWall(x: number, y: number, z: number, sx: number, sy: number, sz: number) {
+    const p = tiltedPos(x, y, z);
 
-  const body = world.createRigidBody(
-    RAPIER.RigidBodyDesc.fixed()
-      .setTranslation(p.x, p.y, p.z)
-      .setRotation(tiltR)
-  );
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(p.x, p.y, p.z)
+        .setRotation(tiltR)
+    );
 
-  world.createCollider(
-    RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5)
-      .setFriction(0.6)
-      .setRestitution(0.2),
-    body
-  );
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5)
+        .setFriction(0.6)
+        .setRestitution(0.2),
+      body
+    );
 
-  const mesh = addMesh(
-    new THREE.Mesh(
-      new THREE.BoxGeometry(sx, sy, sz),
-      new THREE.MeshStandardMaterial({ metalness: 0.0, roughness: 0.95 })
-    )
-  );
-  mesh.position.copy(p);
-  mesh.quaternion.copy(tiltQ);
-}
+    const mesh = addMesh(
+      new THREE.Mesh(
+        new THREE.BoxGeometry(sx, sy, sz),
+        new THREE.MeshStandardMaterial({ metalness: 0.0, roughness: 0.95 })
+      )
+    );
+    mesh.position.copy(p);
+    mesh.quaternion.copy(tiltQ);
+  }
 
   // left/right walls
   addWall(-(fieldW * 0.5 + wallT * 0.5), wallH * 0.5, 0, wallT, wallH, fieldL + wallT * 2);
@@ -126,29 +126,29 @@ function addWall(x: number, y: number, z: number, sx: number, sy: number, sz: nu
   addWall(0, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
 
   // --- Bumpers (fixed) ---
-function addBumper(x: number, z: number, radius: number) {
-  const p = tiltedPos(x, 0.35, z);
+  function addBumper(x: number, z: number, radius: number) {
+    const p = tiltedPos(x, 0.35, z);
 
-  const body = world.createRigidBody(
-    RAPIER.RigidBodyDesc.fixed()
-      .setTranslation(p.x, p.y, p.z)
-      .setRotation(tiltR)
-  );
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(p.x, p.y, p.z)
+        .setRotation(tiltR)
+    );
 
-  world.createCollider(
-    RAPIER.ColliderDesc.ball(radius).setRestitution(0.95).setFriction(0.2),
-    body
-  );
+    world.createCollider(
+      RAPIER.ColliderDesc.ball(radius).setRestitution(0.95).setFriction(0.2),
+      body
+    );
 
-  const mesh = addMesh(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(radius, 24, 16),
-      new THREE.MeshStandardMaterial({ metalness: 0.2, roughness: 0.4 })
-    )
-  );
-  mesh.position.copy(p);
-  mesh.quaternion.copy(tiltQ);
-}
+    const mesh = addMesh(
+      new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 24, 16),
+        new THREE.MeshStandardMaterial({ metalness: 0.2, roughness: 0.4 })
+      )
+    );
+    mesh.position.copy(p);
+    mesh.quaternion.copy(tiltQ);
+  }
 
   addBumper(-2.0, 1.0, 0.45);
   addBumper(+2.0, 2.5, 0.45);
@@ -166,23 +166,69 @@ function addBumper(x: number, z: number, radius: number) {
   };
   const flippers: Flipper[] = [];
 
-  function addFlipper(isLeft: boolean) {
-    const length = 2.25;
-    const thickness = 0.28;
-    const width = 0.5;
-    const direction = isLeft ? 1 : -1;
-    const pivot = new THREE.Vector3(isLeft ? -2.5 : 2.5, 0.25, 6.0);
+  function createFlipperProfile(r1: number, r2: number, dist: number) {
+    const shape = new THREE.Shape();
+    const d = Math.abs(dist);
+    const cosTheta = (r1 - r2) / d;
+    const theta = Math.acos(Math.min(Math.max(cosTheta, -1), 1)); // Clamp for safety
 
+    // Start at top of base circle (C1)
+    // CCW order
+    shape.absarc(0, 0, r1, theta, -theta, false); // Back of base
+    shape.lineTo(d + r2 * Math.cos(-theta), r2 * Math.sin(-theta)); // To bottom of tip
+    shape.absarc(d, 0, r2, -theta, theta, false); // Tip cap
+    shape.lineTo(r1 * Math.cos(theta), r1 * Math.sin(theta)); // Back to top of base
+
+    return shape;
+  }
+
+  function addFlipper(isLeft: boolean) {
+    const rBase = 0.15;
+    const rTip = 0.05;
+    const length = 1.25;
+    const thickness = 0.4;
+
+    // Distance between circle centers to achieve total visual length
+    // Total len = rBase + dist + rTip
+    const dist = length - rBase - rTip;
+
+    const direction = isLeft ? 1 : -1;
+    const pivot = new THREE.Vector3(isLeft ? -1.5 : 1.5, 0.3, 6.0);
     const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
-    const centerPos = tiltedPos(pivot.x + direction * (length * 0.5), pivot.y, pivot.z);
 
     const yaw = THREE.MathUtils.degToRad(isLeft ? 20 : -20);
     const flipperRot = tiltQ.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)));
     const flipperR = rapierQuatFromThree(flipperRot);
 
+    // Create Geometry
+    const shape = createFlipperProfile(rBase, rTip, dist);
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+
+    // Center in thickness (Z -> Y after rotation) 
+    // and orient flat
+    geometry.translate(0, 0, -thickness * 0.5);
+    geometry.rotateX(-Math.PI * 0.5);
+
+    // For right flipper, rotate 180 degrees so it points along -X
+    if (!isLeft) {
+      geometry.rotateY(Math.PI);
+    }
+
+    // Mesh
+    const mesh = addMesh(
+      new THREE.Mesh(
+        geometry,
+        new THREE.MeshStandardMaterial({ color: isLeft ? 0xff5555 : 0x55aaff, roughness: 0.35 })
+      )
+    );
+    // Mesh is child of body, so init locally to 0,0,0
+    mesh.position.copy(pivotPos);
+    mesh.quaternion.copy(flipperRot);
+
+    // Physics
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(centerPos.x, centerPos.y, centerPos.z)
+        .setTranslation(pivotPos.x, pivotPos.y, pivotPos.z)
         .setRotation(flipperR)
         .setLinearDamping(0.6)
         .setAngularDamping(2.0)
@@ -190,21 +236,14 @@ function addBumper(x: number, z: number, radius: number) {
         .setCanSleep(false)
     );
 
+    // Collider from geometry vertices
+    const vertices = new Float32Array(geometry.attributes.position.array);
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(length * 0.5, thickness * 0.5, width * 0.5)
+      RAPIER.ColliderDesc.convexHull(vertices)!
         .setFriction(0.9)
         .setRestitution(0.2),
       body
     );
-
-    const mesh = addMesh(
-      new THREE.Mesh(
-        new THREE.BoxGeometry(length, thickness, width),
-        new THREE.MeshStandardMaterial({ color: isLeft ? 0xff5555 : 0x55aaff, roughness: 0.35 })
-      )
-    );
-    mesh.position.copy(centerPos);
-    mesh.quaternion.copy(flipperRot);
 
     const pivotBody = world.createRigidBody(
       RAPIER.RigidBodyDesc.fixed()
@@ -212,9 +251,10 @@ function addBumper(x: number, z: number, radius: number) {
         .setRotation(flipperR)
     );
 
+    // Joint at origin of both bodies (the pivot point)
     const jointData = RAPIER.JointData.revolute(
       { x: 0, y: 0, z: 0 },
-      { x: -direction * (length * 0.5), y: 0, z: 0 },
+      { x: 0, y: 0, z: 0 },
       { x: 0, y: 1, z: 0 }
     );
     const joint = world.createImpulseJoint(jointData, pivotBody, body, true);
@@ -222,8 +262,8 @@ function addBumper(x: number, z: number, radius: number) {
 
     const restAngle = direction * -0.85;
     const fireAngle = direction * 0.2;
-    const min = Math.min(restAngle, fireAngle) - 0.01;
-    const max = Math.max(restAngle, fireAngle) + 0.01;
+    const min = Math.min(restAngle, fireAngle) - 0.05;
+    const max = Math.max(restAngle, fireAngle) + 0.05;
     motorJoint.setLimits(min, max);
     motorJoint.configureMotorPosition(restAngle, 90, 6);
 
@@ -266,7 +306,7 @@ function addBumper(x: number, z: number, radius: number) {
 
   function launchBall() {
     // impulse mostly +Z, slightly +Y to keep it from scraping immediately
-    ballBody.applyImpulse({ x: 0, y: 0.3, z: 6.0 }, true);
+    ballBody.applyImpulse({ x: 0, y: 0.1, z: -1.0 }, true);
   }
 
   window.addEventListener("keydown", (e) => {
