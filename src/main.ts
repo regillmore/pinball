@@ -125,6 +125,50 @@ async function main() {
   addWall(0, wallH * 0.5, -(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
   addWall(0, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
 
+  // --- Slopes (funnel) ---
+  function addSlope(x: number, z: number, length: number, angle: number) {
+    const p = tiltedPos(x, wallH * 0.5, z);
+    const wallRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, angle, 0));
+    // Combine tilt with wall rotation
+    const totalQ = tiltQ.clone().multiply(wallRot);
+
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(p.x, p.y, p.z)
+        .setRotation(rapierQuatFromThree(totalQ))
+    );
+
+    const wT = 0.25;
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(wT * 0.5, wallH * 0.5, length * 0.5)
+        .setFriction(0.1)
+        .setRestitution(0.5),
+      body
+    );
+
+    const mesh = addMesh(
+      new THREE.Mesh(
+        new THREE.BoxGeometry(wT, wallH, length),
+        new THREE.MeshStandardMaterial({ metalness: 0.1, roughness: 0.8, color: 0x888888 })
+      )
+    );
+    mesh.position.copy(p);
+    mesh.quaternion.copy(totalQ);
+  }
+
+  // Calculate generic geometry for right slope
+  // Start (4.0, 2.0) -> End (1.8, 5.5)
+  // Midpoint x = 2.9, z = 3.75
+  // dx = -2.2, dz = 3.5
+  // Length = sqrt(2.2^2 + 3.5^2) = ~4.134
+  // Angle = atan2(-2.2, 3.5) = -0.56 rad (~ -32 deg)
+
+  const slopeLen = 4.14;
+  const slopeAng = Math.atan2(-2.2, 3.5);
+
+  addSlope(2.9, 3.75, slopeLen, slopeAng); // Right
+  addSlope(-2.9, 3.75, slopeLen, -slopeAng); // Left
+
   // --- Bumpers (fixed) ---
   function addBumper(x: number, z: number, radius: number) {
     const p = tiltedPos(x, 0.35, z);
@@ -299,7 +343,7 @@ async function main() {
   syncPairs.push({ body: ballBody, mesh: ballMesh });
 
   function resetBall() {
-    ballBody.setTranslation({ x: 0, y: 2.2, z: -(fieldL * 0.5) + 1.2 }, true);
+    ballBody.setTranslation({ x: 1.7, y: 2.2, z: -(fieldL * 0.5) + 1.2 }, true);
     ballBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
     ballBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
   }
