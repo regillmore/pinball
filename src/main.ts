@@ -157,16 +157,14 @@ async function main() {
   }
 
   // Calculate generic geometry for right slope
-  // Start (4.0, 2.0) -> End (2.73, 5.5)
-  // Align angle with flippers (~20 deg)
-  const startX = 3.2;
+
+  const startX = 3.25;
   const startZ = 4.5;
   const endZ = 5.75;
-  const slopeDz = endZ - startZ; // 3.5
+  const slopeDz = endZ - startZ;
 
-  // Target angle -50 degrees to match flipper yaw
   const targetAngle = THREE.MathUtils.degToRad(-50);
-  const slopeDx = slopeDz * Math.tan(targetAngle); // ~ -1.27
+  const slopeDx = slopeDz * Math.tan(targetAngle);
 
   const slopeLen = Math.sqrt(slopeDx * slopeDx + slopeDz * slopeDz);
   const slopeAng = Math.atan2(slopeDx, slopeDz);
@@ -183,52 +181,51 @@ async function main() {
   addSlope(-startX, straightMidZ, straightLen, 0);      // Left
 
   // --- Bumpers (fixed) ---
-  function addBumper(x: number, z: number, radius: number) {
-    const p = tiltedPos(x, 0.35, z);
+  // function addBumper(x: number, z: number, radius: number) {
+  //   const p = tiltedPos(x, 0.35, z);
 
-    const body = world.createRigidBody(
-      RAPIER.RigidBodyDesc.fixed()
-        .setTranslation(p.x, p.y, p.z)
-        .setRotation(tiltR)
-    );
+  //   const body = world.createRigidBody(
+  //     RAPIER.RigidBodyDesc.fixed()
+  //       .setTranslation(p.x, p.y, p.z)
+  //       .setRotation(tiltR)
+  //   );
 
-    world.createCollider(
-      RAPIER.ColliderDesc.ball(radius).setRestitution(0.95).setFriction(0.2),
-      body
-    );
+  //   world.createCollider(
+  //     RAPIER.ColliderDesc.ball(radius).setRestitution(0.95).setFriction(0.2),
+  //     body
+  //   );
 
-    const mesh = addMesh(
-      new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 24, 16),
-        new THREE.MeshStandardMaterial({ metalness: 0.2, roughness: 0.4 })
-      )
-    );
-    mesh.position.copy(p);
-    mesh.quaternion.copy(tiltQ);
-  }
+  //   const mesh = addMesh(
+  //     new THREE.Mesh(
+  //       new THREE.SphereGeometry(radius, 24, 16),
+  //       new THREE.MeshStandardMaterial({ metalness: 0.2, roughness: 0.4 })
+  //     )
+  //   );
+  //   mesh.position.copy(p);
+  //   mesh.quaternion.copy(tiltQ);
+  // }
 
-  addBumper(-2.0, 1.0, 0.45);
-  addBumper(+2.0, 2.5, 0.45);
+  //addBumper(-2.0, 1.0, 0.45);
+  //addBumper(+2.0, 2.5, 0.45);
 
   // --- Slingshots (Kickers) ---
   function addSlingshot(x: number, z: number, isLeft: boolean) {
     const shape = new THREE.Shape();
 
-    // Isosceles Triangle pointing "Up" (-Z in shape space)
-    // Local coords relative to center
-    const w = 0.5;
-    const h = 0.8;
+    const w = 1.3;
+    const h = 0.3;
 
-    shape.moveTo(0, -h);         // Top
-    shape.lineTo(-w, h);         // Bottom Left
-    shape.lineTo(w, h);          // Bottom Right
-    shape.lineTo(0, -h);         // Close
+    shape.moveTo(0, h);         // Top
+    shape.lineTo(-w, -h);         // Bottom Left
+    shape.lineTo(w, -h);          // Bottom Right
+    shape.lineTo(0, h);         // Close
 
-    const height = 0.8;
+    const height = 0.5;
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
     // Center geometry vertically (depth) and orient flat on floor
     geometry.translate(0, 0, -height / 2);
     geometry.rotateX(-Math.PI / 2);
+    geometry.rotateY(isLeft ? THREE.MathUtils.degToRad(115) : THREE.MathUtils.degToRad(-115));
 
     const p = tiltedPos(x, wallH * 0.5, z);
 
@@ -259,9 +256,8 @@ async function main() {
     );
   }
 
-  // Placements: Top at Z~3.5, Bottom at Z~5.0 -> Center Z = 4.25
-  addSlingshot(1.0, 4.25, false);
-  addSlingshot(-1.0, 4.25, true);
+  addSlingshot(2.25, 3.9, false);
+  addSlingshot(-2.25, 3.9, true);
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
