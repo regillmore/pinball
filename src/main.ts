@@ -159,12 +159,12 @@ async function main() {
   // Calculate generic geometry for right slope
   // Start (4.0, 2.0) -> End (2.73, 5.5)
   // Align angle with flippers (~20 deg)
-  const startX = 3.25;
-  const startZ = 4.7;
-  const endZ = 6.0;
+  const startX = 3.2;
+  const startZ = 4.5;
+  const endZ = 5.75;
   const slopeDz = endZ - startZ; // 3.5
 
-  // Target angle -20 degrees to match flipper yaw
+  // Target angle -50 degrees to match flipper yaw
   const targetAngle = THREE.MathUtils.degToRad(-50);
   const slopeDx = slopeDz * Math.tan(targetAngle); // ~ -1.27
 
@@ -175,6 +175,12 @@ async function main() {
 
   addSlope(midX, midZ, slopeLen, slopeAng); // Right
   addSlope(-midX, midZ, slopeLen, -slopeAng); // Left
+
+  // Upper straight segments (inlanes)
+  const straightLen = 2.5;
+  const straightMidZ = startZ - straightLen * 0.5;
+  addSlope(startX, straightMidZ, straightLen, 0);       // Right
+  addSlope(-startX, straightMidZ, straightLen, 0);      // Left
 
   // --- Bumpers (fixed) ---
   function addBumper(x: number, z: number, radius: number) {
