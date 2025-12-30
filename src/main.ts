@@ -157,17 +157,24 @@ async function main() {
   }
 
   // Calculate generic geometry for right slope
-  // Start (4.0, 2.0) -> End (1.8, 5.5)
-  // Midpoint x = 2.9, z = 3.75
-  // dx = -2.2, dz = 3.5
-  // Length = sqrt(2.2^2 + 3.5^2) = ~4.134
-  // Angle = atan2(-2.2, 3.5) = -0.56 rad (~ -32 deg)
+  // Start (4.0, 2.0) -> End (2.73, 5.5)
+  // Align angle with flippers (~20 deg)
+  const startX = 3.25;
+  const startZ = 4.7;
+  const endZ = 6.0;
+  const slopeDz = endZ - startZ; // 3.5
 
-  const slopeLen = 4.14;
-  const slopeAng = Math.atan2(-2.2, 3.5);
+  // Target angle -20 degrees to match flipper yaw
+  const targetAngle = THREE.MathUtils.degToRad(-50);
+  const slopeDx = slopeDz * Math.tan(targetAngle); // ~ -1.27
 
-  addSlope(2.9, 3.75, slopeLen, slopeAng); // Right
-  addSlope(-2.9, 3.75, slopeLen, -slopeAng); // Left
+  const slopeLen = Math.sqrt(slopeDx * slopeDx + slopeDz * slopeDz);
+  const slopeAng = Math.atan2(slopeDx, slopeDz);
+  const midX = startX + slopeDx * 0.5;
+  const midZ = startZ + slopeDz * 0.5;
+
+  addSlope(midX, midZ, slopeLen, slopeAng); // Right
+  addSlope(-midX, midZ, slopeLen, -slopeAng); // Left
 
   // --- Bumpers (fixed) ---
   function addBumper(x: number, z: number, radius: number) {
@@ -196,6 +203,59 @@ async function main() {
 
   addBumper(-2.0, 1.0, 0.45);
   addBumper(+2.0, 2.5, 0.45);
+
+  // --- Slingshots (Kickers) ---
+  function addSlingshot(x: number, z: number, isLeft: boolean) {
+    const shape = new THREE.Shape();
+
+    // Isosceles Triangle pointing "Up" (-Z in shape space)
+    // Local coords relative to center
+    const w = 0.5;
+    const h = 0.8;
+
+    shape.moveTo(0, -h);         // Top
+    shape.lineTo(-w, h);         // Bottom Left
+    shape.lineTo(w, h);          // Bottom Right
+    shape.lineTo(0, -h);         // Close
+
+    const height = 0.8;
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
+    // Center geometry vertically (depth) and orient flat on floor
+    geometry.translate(0, 0, -height / 2);
+    geometry.rotateX(-Math.PI / 2);
+
+    const p = tiltedPos(x, wallH * 0.5, z);
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xccff00,
+      emissive: 0x222200,
+      metalness: 0.2,
+      roughness: 0.1
+    });
+
+    const mesh = addMesh(new THREE.Mesh(geometry, mat));
+    mesh.position.copy(p);
+    mesh.quaternion.copy(tiltQ);
+
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(p.x, p.y, p.z)
+        .setRotation(tiltR)
+    );
+
+    // Convex Hull for physics
+    const vertices = new Float32Array(geometry.attributes.position.array);
+    world.createCollider(
+      RAPIER.ColliderDesc.convexHull(vertices)!
+        .setFriction(0.1)
+        .setRestitution(2.5),
+      body
+    );
+  }
+
+  // Placements: Top at Z~3.5, Bottom at Z~5.0 -> Center Z = 4.25
+  addSlingshot(1.0, 4.25, false);
+  addSlingshot(-1.0, 4.25, true);
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
@@ -327,7 +387,7 @@ async function main() {
 
   const ballBody = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(0, 2.2, -(fieldL * 0.5) + 1.2)
+      .setTranslation(1.7, 2.2, -(fieldL * 0.5) + 1.2)
       .setCcdEnabled(true)
       .setLinearDamping(0.15)
       .setAngularDamping(0.15)
@@ -358,12 +418,12 @@ async function main() {
     if (e.code === "KeyR") resetBall();
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 500, 10);
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 10);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
       for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 500, 10);
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 10);
       }
     }
   });
@@ -371,12 +431,12 @@ async function main() {
   window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 500, 8);
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 1250, 8);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
       for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 500, 8);
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 1250, 8);
       }
     }
   });
