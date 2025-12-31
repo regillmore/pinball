@@ -172,12 +172,6 @@ async function main() {
 
     // Rotate and position
     // Center geometry vertically (depth is Z -> mapped to World Y)
-    // Extrude creates depth in Z. We want World Y. Rotate X -90.
-    // But we want it centered on wallH/2? 
-    // Usually we extrude 0 to wallH, then translate.
-    // My previous addSlingshot centered it. Let's assume 0..wallH extrude is simpler, then no vertical center offset needed if we place it at y=0?
-    // Wait, addWall places at y = wallH * 0.5.
-    // Let's stick to centering for consistency with tiltedPos
     geometry.translate(0, 0, -wallH / 2);
     geometry.rotateX(-Math.PI / 2);
 
@@ -202,8 +196,6 @@ async function main() {
     const vertices = new Float32Array(geometry.attributes.position.array);
     const indices = new Uint32Array(geometry.index ? geometry.index.array : []);
 
-    // If no index, we have to generate it? ExtrudeGeometry usually has index.
-    // If not, we have to make one.
     let finalIndices = indices;
     if (!geometry.index) {
       const count = vertices.length / 3;
@@ -219,21 +211,14 @@ async function main() {
     );
   }
 
-  // Add the arc
-  // Channel width = 1.0 (gap between 4.125 and 5.25 lines)
-  // Wall Thickness = 0.25 (centered on lines)
-  // Inner face of Outer Wall = 5.375 - 0.125 = 5.25
-  // Inner face of Top Wall = -8.125 + 0.125 = -8.0
-  // Radius = 1.5
-  // Center X = 5.25 - 1.5 = 3.75
-  // Center Z (Shape Y) = -(-8.0 + 1.5) = 6.5 (World Z = -6.5)
-  // Wait, Shape Y is -World Z.
-  // Center Z_world = -6.5.
-  // Shape Center Y = -(-6.5) = 6.5.
-  // Correct.
+  // Right Corner Arc
   addFixedCurve(3.75, -6.75, 1.5, 0, Math.PI / 2);
   // Left Corner Arc
   addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
+  // Left Channel Cap Arc
+  addFixedCurve(-3, 1.75, 1.25, Math.PI / 2, Math.PI);
+  // Right Channel Cap Arc
+  addFixedCurve(3, 1.75, 1.25, 0, Math.PI / 2);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
