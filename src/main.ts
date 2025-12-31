@@ -61,7 +61,7 @@ async function main() {
   const fieldL = 16;
   const wallH = 1.0;
   const wallT = 0.25;
-  const plungerW = 1.0;
+  const plungerW = 0.75;
 
   // Tilt the playfield slightly so the ball rolls “down” +Z
   const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(6.5), 0, 0));
@@ -144,6 +144,94 @@ async function main() {
   const tbOffset = (wallT + plungerW) / 2;
   addWall(tbOffset, wallH * 0.5, -(fieldL * 0.5 + wallT * 0.5), tbWidth, wallH, wallT);
   addWall(tbOffset, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), tbWidth, wallH, wallT);
+
+  // Plunger Channel Arc (redirects launched ball into playfield)
+  // Replaces the top-right corner with a curved wall
+  function addFixedCurve(cx: number, cz: number, radius: number, startAngle: number, endAngle: number) {
+    const shape = new THREE.Shape();
+    // absarc(x, y, radius, startAngle, endAngle, clockwise)
+    // Note: shape X = world X, shape Y = world -Z.
+    // Angles: 0 is +X, PI/2 is +Y (World -Z)
+    shape.absarc(0, 0, radius, startAngle, endAngle, false);
+
+    // Create inner thickness for the wall
+    const wT = 0.25;
+    const innerRadius = radius - wT;
+
+    const shape2 = new THREE.Shape();
+    shape2.absarc(0, 0, radius, startAngle, endAngle, false);
+    const endX = Math.cos(endAngle);
+    const endY = Math.sin(endAngle);
+    // Line to inner end
+    shape2.lineTo(innerRadius * endX, innerRadius * endY);
+    // Inner arc backwards
+    shape2.absarc(0, 0, innerRadius, endAngle, startAngle, true);
+    shape2.closePath();
+
+    const geometry = new THREE.ExtrudeGeometry(shape2, { depth: wallH, bevelEnabled: false });
+
+    // Rotate and position
+    // Center geometry vertically (depth is Z -> mapped to World Y)
+    // Extrude creates depth in Z. We want World Y. Rotate X -90.
+    // But we want it centered on wallH/2? 
+    // Usually we extrude 0 to wallH, then translate.
+    // My previous addSlingshot centered it. Let's assume 0..wallH extrude is simpler, then no vertical center offset needed if we place it at y=0?
+    // Wait, addWall places at y = wallH * 0.5.
+    // Let's stick to centering for consistency with tiltedPos
+    geometry.translate(0, 0, -wallH / 2);
+    geometry.rotateX(-Math.PI / 2);
+
+    const p = tiltedPos(cx, wallH * 0.5, cz);
+
+    const mesh = addMesh(
+      new THREE.Mesh(
+        geometry,
+        new THREE.MeshStandardMaterial({ metalness: 0.1, roughness: 0.8, color: 0x888888 })
+      )
+    );
+    mesh.position.copy(p);
+    mesh.quaternion.copy(tiltQ);
+
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(p.x, p.y, p.z)
+        .setRotation(tiltR)
+    );
+
+    // Trimesh for generic static shape
+    const vertices = new Float32Array(geometry.attributes.position.array);
+    const indices = new Uint32Array(geometry.index ? geometry.index.array : []);
+
+    // If no index, we have to generate it? ExtrudeGeometry usually has index.
+    // If not, we have to make one.
+    let finalIndices = indices;
+    if (!geometry.index) {
+      const count = vertices.length / 3;
+      finalIndices = new Uint32Array(count);
+      for (let i = 0; i < count; i++) finalIndices[i] = i;
+    }
+
+    world.createCollider(
+      RAPIER.ColliderDesc.trimesh(vertices, finalIndices)
+        .setFriction(0.1)
+        .setRestitution(0.25),
+      body
+    );
+  }
+
+  // Add the arc
+  // Channel width = 1.0 (gap between 4.125 and 5.25 lines)
+  // Wall Thickness = 0.25 (centered on lines)
+  // Inner face of Outer Wall = 5.375 - 0.125 = 5.25
+  // Inner face of Top Wall = -8.125 + 0.125 = -8.0
+  // Radius = 1.5
+  // Center X = 5.25 - 1.5 = 3.75
+  // Center Z (Shape Y) = -(-8.0 + 1.5) = 6.5 (World Z = -6.5)
+  // Wait, Shape Y is -World Z.
+  // Center Z_world = -6.5.
+  // Shape Center Y = -(-6.5) = 6.5.
+  // Correct.
+  addFixedCurve(3.75, -6.75, 1.5, 0, Math.PI / 2);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
@@ -435,7 +523,7 @@ async function main() {
 
   function launchBall() {
     // impulse mostly -Z to launch up the plunger lane
-    ballBody.applyImpulse({ x: 0, y: 0.0, z: -8.0 }, true);
+    ballBody.applyImpulse({ x: 0, y: 0.0, z: -1.0 }, true);
   }
 
   window.addEventListener("keydown", (e) => {
