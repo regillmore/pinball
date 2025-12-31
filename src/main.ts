@@ -204,25 +204,28 @@ async function main() {
   //addBumper(+2.0, 2.5, 0.45);
 
   // --- Slingshots (Kickers) ---
-  function addSlingshot(x: number, z: number, isLeft: boolean) {
+  function addSlingshot(x1: number, z1: number, x2: number, z2: number, x3: number, z3: number) {
+    // Calculate centroid
+    const cx = (x1 + x2 + x3) / 3;
+    const cz = (z1 + z2 + z3) / 3;
+
     const shape = new THREE.Shape();
-
-    const w = 1.3;
-    const h = 0.3;
-
-    shape.moveTo(0, h);         // Top
-    shape.lineTo(-w, -h);         // Bottom Left
-    shape.lineTo(w, -h);          // Bottom Right
-    shape.lineTo(0, h);         // Close
+    // Map World Z (down) to Shape Y (up) -> Y = -Z_local
+    // Shape X = World X_local
+    shape.moveTo(x1 - cx, -(z1 - cz));
+    shape.lineTo(x2 - cx, -(z2 - cz));
+    shape.lineTo(x3 - cx, -(z3 - cz));
+    shape.lineTo(x1 - cx, -(z1 - cz));
 
     const height = 0.5;
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
+
     // Center geometry vertically (depth) and orient flat on floor
+    // Extrude creates depth in Z (mapped to World Y by rotateX)
     geometry.translate(0, 0, -height / 2);
     geometry.rotateX(-Math.PI / 2);
-    geometry.rotateY(isLeft ? THREE.MathUtils.degToRad(115) : THREE.MathUtils.degToRad(-115));
 
-    const p = tiltedPos(x, wallH * 0.5, z);
+    const p = tiltedPos(cx, wallH * 0.5, cz);
 
     const mat = new THREE.MeshStandardMaterial({
       color: 0xccff00,
@@ -251,8 +254,10 @@ async function main() {
     );
   }
 
-  addSlingshot(2.25, 3.9, false);
-  addSlingshot(-2.25, 3.9, true);
+  // Right Slingshot
+  addSlingshot(2.5, 4, 1.25, 5, 2.5, 2.5);
+  // Left Slingshot
+  addSlingshot(-2.5, 4, -1.25, 5, -2.5, 2.5);
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
@@ -294,7 +299,7 @@ async function main() {
     const dist = length - rBase - rTip;
 
     const direction = isLeft ? 1 : -1;
-    const pivot = new THREE.Vector3(isLeft ? -1.25 : 1.25, 0.3, 6.0);
+    const pivot = new THREE.Vector3(isLeft ? -1.25 : 1.25, 0.3, 6.25);
     const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
 
     const yaw = THREE.MathUtils.degToRad(isLeft ? 20 : -20);
