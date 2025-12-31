@@ -255,9 +255,9 @@ async function main() {
   }
 
   // Right Slingshot
-  addSlingshot(2.5, 4, 1.25, 5, 2.5, 2.5);
+  addSlingshot(2.5, 4, 1.5, 5, 2.5, 2.5);
   // Left Slingshot
-  addSlingshot(-2.5, 4, -1.25, 5, -2.5, 2.5);
+  addSlingshot(-2.5, 4, -1.5, 5, -2.5, 2.5);
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
@@ -398,7 +398,7 @@ async function main() {
   world.createCollider(
     RAPIER.ColliderDesc.ball(ballRadius)
       .setRestitution(0.75)
-      .setFriction(0.1),
+      .setFriction(0.01),
     ballBody
   );
 
