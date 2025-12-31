@@ -61,6 +61,7 @@ async function main() {
   const fieldL = 16;
   const wallH = 1.0;
   const wallT = 0.25;
+  const plungerW = 1.0;
 
   // Tilt the playfield slightly so the ball rolls “down” +Z
   const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(6.5), 0, 0));
@@ -79,15 +80,21 @@ async function main() {
     const body = world.createRigidBody(rbDesc);
 
     // Use a thin cuboid as the playfield surface
-    const collider = RAPIER.ColliderDesc.cuboid(fieldW * 0.5, 0.1, fieldL * 0.5)
+    // Total width = main field + inner wall + plunger channel
+    const totalW = fieldW + wallT + plungerW;
+    // Shift center to accommodate the extra width on the right (+X)
+    const offsetX = (wallT + plungerW) / 2;
+
+    const collider = RAPIER.ColliderDesc.cuboid(totalW * 0.5, 0.1, fieldL * 0.5)
+      .setTranslation(offsetX, 0, 0)
       .setFriction(0.1)
-      .setRestitution(0.75);
+      .setRestitution(0.25);
     world.createCollider(collider, body);
 
-    const geo = new THREE.BoxGeometry(fieldW, 0.2, fieldL);
+    const geo = new THREE.BoxGeometry(totalW, 0.2, fieldL);
     const mat = new THREE.MeshStandardMaterial({ metalness: 0.1, roughness: 0.9 });
     const mesh = addMesh(new THREE.Mesh(geo, mat));
-    mesh.position.set(0, 0, 0);
+    mesh.position.set(offsetX, 0, 0);
     mesh.quaternion.copy(tilt);
   }
 
@@ -104,7 +111,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5)
         .setFriction(0.1)
-        .setRestitution(0.75),
+        .setRestitution(0.25),
       body
     );
 
@@ -118,12 +125,25 @@ async function main() {
     mesh.quaternion.copy(tiltQ);
   }
 
-  // left/right walls
+  // left wall (unchanged)
   addWall(-(fieldW * 0.5 + wallT * 0.5), wallH * 0.5, 0, wallT, wallH, fieldL + wallT * 2);
-  addWall(+(fieldW * 0.5 + wallT * 0.5), wallH * 0.5, 0, wallT, wallH, fieldL + wallT * 2);
-  // top/bottom walls
-  addWall(0, wallH * 0.5, -(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
-  addWall(0, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
+
+  // Inner right wall (with gap at top)
+  const gap = 1.5; // Gap at the top (-Z end)
+  const fullWallL = fieldL + wallT * 2;
+  const innerRightL = fullWallL - gap;
+  const innerRightZ = gap / 2; // Shifted "down" (+Z) by half the gap
+  addWall(+(fieldW * 0.5 + wallT * 0.5), wallH * 0.5, innerRightZ, wallT, wallH, innerRightL);
+
+  // Outer right wall (new)
+  const outerRightX = (fieldW * 0.5) + wallT + plungerW + (wallT * 0.5);
+  addWall(outerRightX, wallH * 0.5, 0, wallT, wallH, fieldL + wallT * 2);
+
+  // top/bottom walls (extended)
+  const tbWidth = fieldW + wallT + plungerW;
+  const tbOffset = (wallT + plungerW) / 2;
+  addWall(tbOffset, wallH * 0.5, -(fieldL * 0.5 + wallT * 0.5), tbWidth, wallH, wallT);
+  addWall(tbOffset, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), tbWidth, wallH, wallT);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
@@ -149,7 +169,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(wT * 0.5, wallH * 0.5, length * 0.5)
         .setFriction(0.1)
-        .setRestitution(0.75),
+        .setRestitution(0.25),
       body
     );
 
@@ -249,7 +269,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.convexHull(vertices)!
         .setFriction(0.1)
-        .setRestitution(0.75),
+        .setRestitution(0.25),
       body
     );
   }
@@ -336,8 +356,8 @@ async function main() {
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(pivotPos.x, pivotPos.y, pivotPos.z)
         .setRotation(flipperR)
-        .setLinearDamping(0.6)
-        .setAngularDamping(2.0)
+        //.setLinearDamping(0.6)
+        //.setAngularDamping(2.0)
         .setCcdEnabled(true)
         .setCanSleep(false)
     );
@@ -347,7 +367,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.convexHull(vertices)!
         .setFriction(0.1)
-        .setRestitution(0.75),
+        .setRestitution(0.25),
       body
     );
 
@@ -368,8 +388,8 @@ async function main() {
 
     const restAngle = direction * -0.85;
     const fireAngle = direction * 0.2;
-    const min = Math.min(restAngle, fireAngle) - 0.05;
-    const max = Math.max(restAngle, fireAngle) + 0.05;
+    const min = Math.min(restAngle, fireAngle) - 0.02;
+    const max = Math.max(restAngle, fireAngle) + 0.02;
     motorJoint.setLimits(min, max);
     motorJoint.configureMotorPosition(restAngle, 90, 6);
 
@@ -389,30 +409,33 @@ async function main() {
 
   const ballBody = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(1.7, 2.2, -(fieldL * 0.5) + 1.2)
+      .setTranslation((fieldW * 0.5) + wallT + (plungerW * 0.5), 1.0, (fieldL * 0.5) - 0.5)
       .setCcdEnabled(true)
-      .setLinearDamping(0.1)
-      .setAngularDamping(0.1)
+    //.setLinearDamping(0.1)
+    //.setAngularDamping(0.1)
   );
 
   world.createCollider(
     RAPIER.ColliderDesc.ball(ballRadius)
-      .setRestitution(0.75)
-      .setFriction(0.01),
+      .setFriction(0.1)
+      .setRestitution(0.25),
     ballBody
   );
 
   syncPairs.push({ body: ballBody, mesh: ballMesh });
 
+  const plungerX = (fieldW * 0.5) + wallT + (plungerW * 0.5);
+  const plungerStartZ = (fieldL * 0.5) - 0.5;
+
   function resetBall() {
-    ballBody.setTranslation({ x: 1.7, y: 2.2, z: -(fieldL * 0.5) + 1.2 }, true);
+    ballBody.setTranslation({ x: plungerX, y: 1.0, z: plungerStartZ }, true);
     ballBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
     ballBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
   }
 
   function launchBall() {
-    // impulse mostly +Z, slightly +Y to keep it from scraping immediately
-    ballBody.applyImpulse({ x: 0, y: 0.1, z: -1.0 }, true);
+    // impulse mostly -Z to launch up the plunger lane
+    ballBody.applyImpulse({ x: 0, y: 0.0, z: -8.0 }, true);
   }
 
   window.addEventListener("keydown", (e) => {
