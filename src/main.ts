@@ -232,6 +232,8 @@ async function main() {
   // Shape Center Y = -(-6.5) = 6.5.
   // Correct.
   addFixedCurve(3.75, -6.75, 1.5, 0, Math.PI / 2);
+  // Left Corner Arc
+  addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
