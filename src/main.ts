@@ -80,8 +80,8 @@ async function main() {
 
     // Use a thin cuboid as the playfield surface
     const collider = RAPIER.ColliderDesc.cuboid(fieldW * 0.5, 0.1, fieldL * 0.5)
-      .setFriction(0.7)
-      .setRestitution(0.2);
+      .setFriction(0.1)
+      .setRestitution(0.75);
     world.createCollider(collider, body);
 
     const geo = new THREE.BoxGeometry(fieldW, 0.2, fieldL);
@@ -103,8 +103,8 @@ async function main() {
 
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5)
-        .setFriction(0.6)
-        .setRestitution(0.2),
+        .setFriction(0.1)
+        .setRestitution(0.75),
       body
     );
 
@@ -142,7 +142,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(wT * 0.5, wallH * 0.5, length * 0.5)
         .setFriction(0.1)
-        .setRestitution(0.5),
+        .setRestitution(0.75),
       body
     );
 
@@ -157,7 +157,6 @@ async function main() {
   }
 
   // Calculate generic geometry for right slope
-
   const startX = 3.25;
   const startZ = 4.5;
   const endZ = 5.75;
@@ -251,7 +250,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.convexHull(vertices)!
         .setFriction(0.1)
-        .setRestitution(2.5),
+        .setRestitution(0.75),
       body
     );
   }
@@ -346,8 +345,8 @@ async function main() {
     const vertices = new Float32Array(geometry.attributes.position.array);
     world.createCollider(
       RAPIER.ColliderDesc.convexHull(vertices)!
-        .setFriction(0.9)
-        .setRestitution(0.2),
+        .setFriction(0.1)
+        .setRestitution(0.75),
       body
     );
 
@@ -391,14 +390,14 @@ async function main() {
     RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(1.7, 2.2, -(fieldL * 0.5) + 1.2)
       .setCcdEnabled(true)
-      .setLinearDamping(0.15)
-      .setAngularDamping(0.15)
+      .setLinearDamping(0.1)
+      .setAngularDamping(0.1)
   );
 
   world.createCollider(
     RAPIER.ColliderDesc.ball(ballRadius)
-      .setRestitution(0.45)
-      .setFriction(0.6),
+      .setRestitution(0.75)
+      .setFriction(0.1),
     ballBody
   );
 
