@@ -126,8 +126,15 @@ async function main() {
   addWall(0, wallH * 0.5, +(fieldL * 0.5 + wallT * 0.5), fieldW, wallH, wallT);
 
   // --- Slopes (funnel) ---
-  function addSlope(x: number, z: number, length: number, angle: number) {
-    const p = tiltedPos(x, wallH * 0.5, z);
+  function addSlope(x1: number, z1: number, x2: number, z2: number) {
+    const midX = (x1 + x2) / 2;
+    const midZ = (z1 + z2) / 2;
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const length = Math.sqrt(dx * dx + dz * dz);
+    const angle = Math.atan2(dx, dz);
+
+    const p = tiltedPos(midX, wallH * 0.5, midZ);
     const wallRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, angle, 0));
     // Combine tilt with wall rotation
     const totalQ = tiltQ.clone().multiply(wallRot);
@@ -156,28 +163,17 @@ async function main() {
     mesh.quaternion.copy(totalQ);
   }
 
-  // Calculate generic geometry for right slope
-  const startX = 3.25;
-  const startZ = 4.5;
-  const endZ = 5.75;
-  const slopeDz = endZ - startZ;
-
-  const targetAngle = THREE.MathUtils.degToRad(-50);
-  const slopeDx = slopeDz * Math.tan(targetAngle);
-
-  const slopeLen = Math.sqrt(slopeDx * slopeDx + slopeDz * slopeDz);
-  const slopeAng = Math.atan2(slopeDx, slopeDz);
-  const midX = startX + slopeDx * 0.5;
-  const midZ = startZ + slopeDz * 0.5;
-
-  addSlope(midX, midZ, slopeLen, slopeAng); // Right
-  addSlope(-midX, midZ, slopeLen, -slopeAng); // Left
+  // Flipper slopes
+  addSlope(3.25, 4.5, 1.5, 6.0); // Right
+  addSlope(-3.25, 4.5, -1.5, 6.0); // Left
 
   // Upper straight segments (inlanes)
-  const straightLen = 2.5;
-  const straightMidZ = startZ - straightLen * 0.5;
-  addSlope(startX, straightMidZ, straightLen, 0);       // Right
-  addSlope(-startX, straightMidZ, straightLen, 0);      // Left
+  addSlope(3.25, 2.0, 3.25, 4.5);       // Right
+  addSlope(-3.25, 2.0, -3.25, 4.5);      // Left
+
+  // Lower slopes (below flippers, guiding to drain)
+  addSlope(4.0, 5.0, 0.5, 8.0);       // Right
+  addSlope(-4.0, 5.0, -0.5, 8.0);      // Left
 
   // --- Bumpers (fixed) ---
   // function addBumper(x: number, z: number, radius: number) {
@@ -298,7 +294,7 @@ async function main() {
     const dist = length - rBase - rTip;
 
     const direction = isLeft ? 1 : -1;
-    const pivot = new THREE.Vector3(isLeft ? -1.5 : 1.5, 0.3, 6.0);
+    const pivot = new THREE.Vector3(isLeft ? -1.25 : 1.25, 0.3, 6.0);
     const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
 
     const yaw = THREE.MathUtils.degToRad(isLeft ? 20 : -20);
