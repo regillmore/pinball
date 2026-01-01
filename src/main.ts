@@ -62,6 +62,7 @@ async function main() {
   const fieldL = 16;
   const wallH = 1.0;
   const slopeH = wallH - 0.05;
+  const slingshotH = slopeH - 0.05;
   const wallT = 0.25;
   const plungerW = 0.75;
 
@@ -334,7 +335,7 @@ async function main() {
     const length = Math.sqrt(dx * dx + dz * dz);
     const angle = Math.atan2(dx, dz);
 
-    const p = tiltedPos(midX, slopeH * 0.5, midZ);
+    const p = tiltedPos(midX, slingshotH * 0.5, midZ);
     const wallRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, angle, 0));
     const totalQ = tiltQ.clone().multiply(wallRot);
 
@@ -346,7 +347,7 @@ async function main() {
 
     const wT = 0.25;
     const collider = world.createCollider(
-      RAPIER.ColliderDesc.cuboid(wT * 0.5, slopeH * 0.5, length * 0.5)
+      RAPIER.ColliderDesc.cuboid(wT * 0.5, slingshotH * 0.5, length * 0.5)
         .setFriction(0.1)
         .setRestitution(0.5)
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
@@ -357,7 +358,7 @@ async function main() {
 
     const mesh = addMesh(
       new THREE.Mesh(
-        new THREE.BoxGeometry(wT, slopeH, length),
+        new THREE.BoxGeometry(wT, slingshotH, length),
         new THREE.MeshStandardMaterial({
           color: 0xccff00,
           emissive: 0x444400,
