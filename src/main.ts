@@ -223,13 +223,17 @@ async function main() {
   addFixedCurve(3, 1.75, 1.25, 0, Math.PI / 2);
   addFixedCurve(3, -0.5, 1.25, -Math.PI / 2, 0);
   // Left Channel Arc
-  addFixedCurve(-2.75, 4.5, 1.5, Math.PI, -3 * Math.PI / 4);
+  addFixedCurve(-0.25, 3.4, 4, Math.PI, -3 * Math.PI / 4);
   // Right Channel Arc
-  addFixedCurve(2.75, 4.5, 1.5, -Math.PI / 4, 0);
+  addFixedCurve(0.25, 3.4, 4, -Math.PI / 4, 0);
   // Left Flipper Slope Arc
   addFixedCurve(-1.67, 4, 1.7, Math.PI, -3 * Math.PI / 4);
   // Right Flipper Slope Arc
   addFixedCurve(1.67, 4, 1.7, -Math.PI / 4, 0);
+  // Left Slingshot Arc
+  addFixedCurve(-2.02, 4, 0.5, Math.PI, -3 * Math.PI / 4);
+  // Right Slingshot Arc
+  addFixedCurve(2.02, 4, 0.5, -Math.PI / 4, 0);
   // Bottom Funnel Arc
   addFixedCurve(0, 6.25, 2, -3 * Math.PI / 4, -Math.PI / 4);
 
@@ -279,9 +283,15 @@ async function main() {
   addSlope(3.25, 2.0, 3.25, 4);       // Right
   addSlope(-3.25, 2.0, -3.25, 4);      // Left
 
+  // Slingshot slopes
+  addSlope(2.36, 4.2, 1.5, 4.95); // Right
+  addSlope(-2.36, 4.2, -1.5, 4.95); // Left
+  addSlope(2.4, 3, 2.4, 4);       // Right
+  addSlope(-2.4, 3, -2.4, 4);      // Left
+
   // Lower slopes (below flippers, guiding to drain)
-  addSlope(3.75, 5.45, 1.25, 7.65);       // Right
-  addSlope(-3.75, 5.45, -1.25, 7.65);      // Left
+  addSlope(3.1, 6.04, 1.25, 7.65);       // Right
+  addSlope(-3.1, 6.04, -1.25, 7.65);      // Left
 
   // --- Bumpers (fixed) ---
   // function addBumper(x: number, z: number, radius: number) {
@@ -363,9 +373,9 @@ async function main() {
   }
 
   // Right Slingshot
-  addSlingshot(2.5, 4, 1.5, 5, 2.5, 2.5);
+  addSlingshot(2.25, 4, 1.4, 4.9, 2.4, 2.75);
   // Left Slingshot
-  addSlingshot(-2.5, 4, -1.5, 5, -2.5, 2.5);
+  addSlingshot(-2.25, 4, -1.4, 4.9, -2.4, 2.75);
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
