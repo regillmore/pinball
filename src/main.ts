@@ -60,6 +60,7 @@ async function main() {
   const fieldW = 8;
   const fieldL = 16;
   const wallH = 1.0;
+  const slopeH = wallH - 0.05;
   const wallT = 0.25;
   const plungerW = 0.75;
 
@@ -168,14 +169,14 @@ async function main() {
     shape2.absarc(0, 0, innerRadius, endAngle, startAngle, true);
     shape2.closePath();
 
-    const geometry = new THREE.ExtrudeGeometry(shape2, { depth: wallH, bevelEnabled: false });
+    const geometry = new THREE.ExtrudeGeometry(shape2, { depth: slopeH, bevelEnabled: false });
 
     // Rotate and position
     // Center geometry vertically (depth is Z -> mapped to World Y)
-    geometry.translate(0, 0, -wallH / 2);
+    geometry.translate(0, 0, -slopeH / 2);
     geometry.rotateX(-Math.PI / 2);
 
-    const p = tiltedPos(cx, wallH * 0.5, cz);
+    const p = tiltedPos(cx, slopeH * 0.5, cz);
 
     const mesh = addMesh(
       new THREE.Mesh(
@@ -230,7 +231,7 @@ async function main() {
   // Right Flipper Slope Arc
   addFixedCurve(1.67, 4.1, 1.7, -Math.PI / 4, 0);
   // Bottom Funnel Arc
-  addFixedCurve(0, 6.5, 1.75, -3 * Math.PI / 4, -Math.PI / 4);
+  addFixedCurve(0, 6.25, 2, -3 * Math.PI / 4, -Math.PI / 4);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
@@ -241,7 +242,7 @@ async function main() {
     const length = Math.sqrt(dx * dx + dz * dz);
     const angle = Math.atan2(dx, dz);
 
-    const p = tiltedPos(midX, wallH * 0.5, midZ);
+    const p = tiltedPos(midX, slopeH * 0.5, midZ);
     const wallRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, angle, 0));
     // Combine tilt with wall rotation
     const totalQ = tiltQ.clone().multiply(wallRot);
@@ -254,7 +255,7 @@ async function main() {
 
     const wT = 0.25;
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(wT * 0.5, wallH * 0.5, length * 0.5)
+      RAPIER.ColliderDesc.cuboid(wT * 0.5, slopeH * 0.5, length * 0.5)
         .setFriction(0.1)
         .setRestitution(0.25),
       body
@@ -262,7 +263,7 @@ async function main() {
 
     const mesh = addMesh(
       new THREE.Mesh(
-        new THREE.BoxGeometry(wT, wallH, length),
+        new THREE.BoxGeometry(wT, slopeH, length),
         new THREE.MeshStandardMaterial({ metalness: 0.1, roughness: 0.8, color: 0x888888 })
       )
     );
@@ -279,8 +280,8 @@ async function main() {
   addSlope(-3.25, 2.0, -3.25, 4.25);      // Left
 
   // Lower slopes (below flippers, guiding to drain)
-  addSlope(3.75, 5.45, 1.15, 7.65);       // Right
-  addSlope(-3.75, 5.45, -1.15, 7.65);      // Left
+  addSlope(3.75, 5.45, 1.25, 7.65);       // Right
+  addSlope(-3.75, 5.45, -1.25, 7.65);      // Left
 
   // --- Bumpers (fixed) ---
   // function addBumper(x: number, z: number, radius: number) {
