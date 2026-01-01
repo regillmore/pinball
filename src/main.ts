@@ -564,6 +564,51 @@ async function main() {
     }
   });
 
+  // --- Mouse Drag ---
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.0); // Plane at y=1.0
+  let isDragging = false;
+
+  window.addEventListener("pointerdown", (e) => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObject(ballMesh);
+    if (intersects.length > 0) {
+      isDragging = true;
+      document.body.style.cursor = "grabbing";
+      // steady the ball
+      ballBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      ballBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!isDragging) return;
+
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    const target = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(dragPlane, target)) {
+      ballBody.setTranslation({ x: target.x, y: 1.0, z: target.z }, true);
+      ballBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      ballBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+  });
+
+  window.addEventListener("pointerup", () => {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = "auto";
+    }
+  });
+
   // --- Fixed timestep loop ---
   const fixedDt = 1 / 60;
   let last = performance.now() / 1000;
