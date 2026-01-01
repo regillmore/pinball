@@ -657,7 +657,12 @@ async function main() {
               normal.negate();
             }
 
-            const strength = 0.5;
+            // Only kick if the ball hits with sufficient force
+            const vel = ballBody.linvel();
+            const impactSpeed = normal.x * vel.x + normal.y * vel.y + normal.z * vel.z;
+            if (impactSpeed < 0.25) return;
+
+            const strength = 0.25;
             ballBody.applyImpulse({
               x: normal.x * strength,
               y: normal.y * strength,
