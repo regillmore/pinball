@@ -227,9 +227,9 @@ async function main() {
   // Right Channel Arc
   addFixedCurve(2.75, 4.5, 1.5, -Math.PI / 4, 0);
   // Left Flipper Slope Arc
-  addFixedCurve(-1.67, 4.1, 1.7, Math.PI, -3 * Math.PI / 4);
+  addFixedCurve(-1.67, 4, 1.7, Math.PI, -3 * Math.PI / 4);
   // Right Flipper Slope Arc
-  addFixedCurve(1.67, 4.1, 1.7, -Math.PI / 4, 0);
+  addFixedCurve(1.67, 4, 1.7, -Math.PI / 4, 0);
   // Bottom Funnel Arc
   addFixedCurve(0, 6.25, 2, -3 * Math.PI / 4, -Math.PI / 4);
 
@@ -272,12 +272,12 @@ async function main() {
   }
 
   // Flipper slopes
-  addSlope(2.8, 5.2, 1.5, 6.25); // Right
-  addSlope(-2.8, 5.2, -1.5, 6.25); // Left
+  addSlope(2.85, 5.05, 1.5, 6.25); // Right
+  addSlope(-2.85, 5.05, -1.5, 6.25); // Left
 
   // Upper straight segments (inlanes)
-  addSlope(3.25, 2.0, 3.25, 4.25);       // Right
-  addSlope(-3.25, 2.0, -3.25, 4.25);      // Left
+  addSlope(3.25, 2.0, 3.25, 4);       // Right
+  addSlope(-3.25, 2.0, -3.25, 4);      // Left
 
   // Lower slopes (below flippers, guiding to drain)
   addSlope(3.75, 5.45, 1.25, 7.65);       // Right
