@@ -217,8 +217,20 @@ async function main() {
   addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
   // Left Channel Cap Arc
   addFixedCurve(-3, 1.75, 1.25, Math.PI / 2, Math.PI);
+  addFixedCurve(-3, -0.5, 1.25, Math.PI, -Math.PI / 2);
   // Right Channel Cap Arc
   addFixedCurve(3, 1.75, 1.25, 0, Math.PI / 2);
+  addFixedCurve(3, -0.5, 1.25, -Math.PI / 2, 0);
+  // Left Channel Arc
+  addFixedCurve(-2.75, 4.5, 1.5, Math.PI, -3 * Math.PI / 4);
+  // Right Channel Arc
+  addFixedCurve(2.75, 4.5, 1.5, -Math.PI / 4, 0);
+  // Left Flipper Slope Arc
+  addFixedCurve(-1.67, 4.1, 1.7, Math.PI, -3 * Math.PI / 4);
+  // Right Flipper Slope Arc
+  addFixedCurve(1.67, 4.1, 1.7, -Math.PI / 4, 0);
+  // Bottom Funnel Arc
+  addFixedCurve(0, 6.5, 1.75, -3 * Math.PI / 4, -Math.PI / 4);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
@@ -259,16 +271,16 @@ async function main() {
   }
 
   // Flipper slopes
-  addSlope(3.25, 4.5, 1.5, 6.0); // Right
-  addSlope(-3.25, 4.5, -1.5, 6.0); // Left
+  addSlope(2.8, 5.2, 1.5, 6.25); // Right
+  addSlope(-2.8, 5.2, -1.5, 6.25); // Left
 
   // Upper straight segments (inlanes)
-  addSlope(3.25, 2.0, 3.25, 4.5);       // Right
-  addSlope(-3.25, 2.0, -3.25, 4.5);      // Left
+  addSlope(3.25, 2.0, 3.25, 4.25);       // Right
+  addSlope(-3.25, 2.0, -3.25, 4.25);      // Left
 
   // Lower slopes (below flippers, guiding to drain)
-  addSlope(4.0, 5.0, 0.5, 8.0);       // Right
-  addSlope(-4.0, 5.0, -0.5, 8.0);      // Left
+  addSlope(3.75, 5.45, 1.15, 7.65);       // Right
+  addSlope(-3.75, 5.45, -1.15, 7.65);      // Left
 
   // --- Bumpers (fixed) ---
   // function addBumper(x: number, z: number, radius: number) {
@@ -394,7 +406,7 @@ async function main() {
     const dist = length - rBase - rTip;
 
     const direction = isLeft ? 1 : -1;
-    const pivot = new THREE.Vector3(isLeft ? -1.25 : 1.25, 0.3, 6.25);
+    const pivot = new THREE.Vector3(isLeft ? -1.35 : 1.35, 0.3, 6.4);
     const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
 
     const yaw = THREE.MathUtils.degToRad(isLeft ? 20 : -20);
