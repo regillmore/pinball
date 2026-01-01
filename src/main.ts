@@ -324,8 +324,8 @@ async function main() {
   //addBumper(+2.0, 2.5, 0.45);
 
   // --- Slingshots (Kickers) ---
-  // --- Slingshots (Kickers) ---
   const kickers = new Set<number>(); // Store collider handles
+  const kickerMeshes = new Map<number, THREE.Mesh>(); // Store mesh for each collider handle
 
   function addSlingshot(x1: number, z1: number, x2: number, z2: number) {
     const midX = (x1 + x2) / 2;
@@ -369,6 +369,8 @@ async function main() {
     );
     mesh.position.copy(p);
     mesh.quaternion.copy(totalQ);
+
+    kickerMeshes.set(collider.handle, mesh as THREE.Mesh);
   }
 
   // Right Slingshot
@@ -662,12 +664,23 @@ async function main() {
             const impactSpeed = normal.x * vel.x + normal.y * vel.y + normal.z * vel.z;
             if (impactSpeed < 0.25) return;
 
-            const strength = 0.25;
+            const strength = 0.35;
             ballBody.applyImpulse({
               x: normal.x * strength,
               y: normal.y * strength,
               z: normal.z * strength
             }, true);
+
+            // Light up effect
+            const mesh = kickerMeshes.get(otherHandle);
+            if (mesh) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              const originalEmissive = mat.emissive.getHex();
+              mat.emissive.setHex(0xffff00); // Flash yellow
+              setTimeout(() => {
+                mat.emissive.setHex(originalEmissive);
+              }, 100);
+            }
           }
         }
       });
