@@ -55,6 +55,7 @@ async function main() {
   await RAPIER.init();
 
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+  const eventQueue = new RAPIER.EventQueue(true);
 
   // ---- Level dimensions (meters-ish) ----
   const fieldW = 8;
@@ -322,60 +323,58 @@ async function main() {
   //addBumper(+2.0, 2.5, 0.45);
 
   // --- Slingshots (Kickers) ---
-  function addSlingshot(x1: number, z1: number, x2: number, z2: number, x3: number, z3: number) {
-    // Calculate centroid
-    const cx = (x1 + x2 + x3) / 3;
-    const cz = (z1 + z2 + z3) / 3;
+  // --- Slingshots (Kickers) ---
+  const kickers = new Set<number>(); // Store collider handles
 
-    const shape = new THREE.Shape();
-    // Map World Z (down) to Shape Y (up) -> Y = -Z_local
-    // Shape X = World X_local
-    shape.moveTo(x1 - cx, -(z1 - cz));
-    shape.lineTo(x2 - cx, -(z2 - cz));
-    shape.lineTo(x3 - cx, -(z3 - cz));
-    shape.lineTo(x1 - cx, -(z1 - cz));
+  function addSlingshot(x1: number, z1: number, x2: number, z2: number) {
+    const midX = (x1 + x2) / 2;
+    const midZ = (z1 + z2) / 2;
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const length = Math.sqrt(dx * dx + dz * dz);
+    const angle = Math.atan2(dx, dz);
 
-    const height = 0.5;
-    const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
-
-    // Center geometry vertically (depth) and orient flat on floor
-    // Extrude creates depth in Z (mapped to World Y by rotateX)
-    geometry.translate(0, 0, -height / 2);
-    geometry.rotateX(-Math.PI / 2);
-
-    const p = tiltedPos(cx, wallH * 0.5, cz);
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xccff00,
-      emissive: 0x222200,
-      metalness: 0.2,
-      roughness: 0.1
-    });
-
-    const mesh = addMesh(new THREE.Mesh(geometry, mat));
-    mesh.position.copy(p);
-    mesh.quaternion.copy(tiltQ);
+    const p = tiltedPos(midX, slopeH * 0.5, midZ);
+    const wallRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, angle, 0));
+    const totalQ = tiltQ.clone().multiply(wallRot);
 
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.fixed()
         .setTranslation(p.x, p.y, p.z)
-        .setRotation(tiltR)
+        .setRotation(rapierQuatFromThree(totalQ))
     );
 
-    // Convex Hull for physics
-    const vertices = new Float32Array(geometry.attributes.position.array);
-    world.createCollider(
-      RAPIER.ColliderDesc.convexHull(vertices)!
+    const wT = 0.25;
+    const collider = world.createCollider(
+      RAPIER.ColliderDesc.cuboid(wT * 0.5, slopeH * 0.5, length * 0.5)
         .setFriction(0.1)
-        .setRestitution(0.25),
+        .setRestitution(0.5)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
       body
     );
+
+    kickers.add(collider.handle);
+
+    const mesh = addMesh(
+      new THREE.Mesh(
+        new THREE.BoxGeometry(wT, slopeH, length),
+        new THREE.MeshStandardMaterial({
+          color: 0xccff00,
+          emissive: 0x444400,
+          metalness: 0.2,
+          roughness: 0.1
+        })
+      )
+    );
+    mesh.position.copy(p);
+    mesh.quaternion.copy(totalQ);
   }
 
   // Right Slingshot
-  addSlingshot(2.25, 4, 1.4, 4.9, 2.4, 2.75);
+  addSlingshot(2.36, 3.05, 1.53, 4.9);
   // Left Slingshot
-  addSlingshot(-2.25, 4, -1.4, 4.9, -2.4, 2.75);
+  addSlingshot(-2.36, 3.05, -1.53, 4.9);
+
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
@@ -513,10 +512,11 @@ async function main() {
     //.setAngularDamping(0.1)
   );
 
-  world.createCollider(
+  const ballCollider = world.createCollider(
     RAPIER.ColliderDesc.ball(ballRadius)
       .setFriction(0.1)
-      .setRestitution(0.25),
+      .setRestitution(0.25)
+      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     ballBody
   );
 
@@ -624,7 +624,47 @@ async function main() {
     acc += dt;
 
     while (acc >= fixedDt) {
-      world.step();
+      world.step(eventQueue);
+
+      eventQueue.drainCollisionEvents((handle1, handle2, started) => {
+        if (!started) return;
+
+        let otherHandle: number | undefined;
+
+        if (handle1 === ballCollider.handle) otherHandle = handle2;
+        else if (handle2 === ballCollider.handle) otherHandle = handle1;
+
+        if (otherHandle !== undefined && kickers.has(otherHandle)) {
+          const kickerBody = world.getCollider(otherHandle).parent();
+          if (kickerBody) {
+            const ballPos = ballBody.translation();
+            const kickerPos = kickerBody.translation();
+
+            const rot = kickerBody.rotation();
+            const q = new THREE.Quaternion(rot.x, rot.y, rot.z, rot.w);
+
+            // Reference normal (local +X)
+            const normal = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
+
+            const dirToBall = new THREE.Vector3().subVectors(
+              new THREE.Vector3(ballPos.x, ballPos.y, ballPos.z),
+              new THREE.Vector3(kickerPos.x, kickerPos.y, kickerPos.z)
+            );
+
+            // Flip normal if needed
+            if (normal.dot(dirToBall) < 0) {
+              normal.negate();
+            }
+
+            const strength = 0.5;
+            ballBody.applyImpulse({
+              x: normal.x * strength,
+              y: normal.y * strength,
+              z: normal.z * strength
+            }, true);
+          }
+        }
+      });
       acc -= fixedDt;
     }
 
