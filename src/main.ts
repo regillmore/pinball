@@ -467,6 +467,7 @@ async function main() {
     world.createCollider(
       RAPIER.ColliderDesc.convexHull(vertices)!
         .setFriction(0.1)
+        .setDensity(50.0)
         .setRestitution(0.25),
       body
     );
@@ -544,12 +545,12 @@ async function main() {
     if (e.code === "KeyR") resetBall();
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 10);
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
       for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 10);
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
       }
     }
   });
@@ -557,12 +558,12 @@ async function main() {
   window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
       for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 1250, 8);
+        if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 1250, 50);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
       for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 1250, 8);
+        if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 1250, 50);
       }
     }
   });
