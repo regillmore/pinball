@@ -221,13 +221,13 @@ async function main() {
   // Ball Lock Cap Arc
   addFixedCurve(4.55, -2.75, 8, Math.PI, -7 * Math.PI / 8);
   // Ball Lock Arc
-  addFixedCurve(9.75, -3.25, 14, Math.PI, -7 * Math.PI / 8);
+  addFixedCurve(4.75, -2.12, 9, Math.PI, -27 * Math.PI / 32);
   // Left Channel Cap Arc
   addFixedCurve(-2.25, 3.75, 2, 5 * Math.PI / 8, Math.PI);
-  //addFixedCurve(-3, -0.5, 1.25, Math.PI, -Math.PI / 2);
   // Right Channel Cap Arc
-  addFixedCurve(3, 1.75, 1.25, 0, Math.PI / 2);
-  addFixedCurve(3, -0.5, 1.25, -Math.PI / 2, 0);
+  addFixedCurve(2.25, 3.75, 2, 0, 3 * Math.PI / 8);
+  // Right Mid Arc
+  addFixedCurve(-9.75, -4.75, 14, -4 * Math.PI / 32, 0);
   // Left Channel Arc
   //addFixedCurve(-0.25, 3.4, 4, Math.PI, -3 * Math.PI / 4);
   // Right Channel Arc
@@ -283,7 +283,7 @@ async function main() {
   addSlope(3.4, 5.1, 1.5, 6.25); // Right
   addSlope(-3.4, 5.1, -1.5, 6.25); // Left
 
-  // Flipper upper slopes
+  // Flipper upper vert
   addSlope(3.35, 3.5, 3.35, 5.2);       // Right
   addSlope(-3.35, 3.5, -3.35, 5.2);      // Left
 
@@ -291,9 +291,12 @@ async function main() {
   addSlope(2.65, 4.5, 1.65, 5.1); // Right
   addSlope(-2.65, 4.5, -1.65, 5.1); // Left
 
-  // Slingshot upper slopes
+  // Slingshot upper vert
   addSlope(2.6, 3.0, 2.6, 4.6);       // Right
   addSlope(-2.6, 3.0, -2.6, 4.6);      // Left
+
+  // Right mid vert
+  addSlope(3.05, 0.53, 3.05, 2.1);       // Right
 
   // Lower slopes (below flippers, guiding to drain)
   addSlope(4.15, 5.65, 1.5, 7.25);       // Right
