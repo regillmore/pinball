@@ -218,26 +218,28 @@ async function main() {
   addFixedCurve(3.75, -6.75, 1.5, 0, Math.PI / 2);
   // Left Corner Arc
   addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
+  // Ball Lock Cap Arc
+  addFixedCurve(4.55, -2.75, 8, Math.PI, -7 * Math.PI / 8);
+  // Ball Lock Arc
+  addFixedCurve(9.75, -3.25, 14, Math.PI, -7 * Math.PI / 8);
   // Left Channel Cap Arc
-  addFixedCurve(-3, 1.75, 1.25, Math.PI / 2, Math.PI);
-  addFixedCurve(-3, -0.5, 1.25, Math.PI, -Math.PI / 2);
+  addFixedCurve(-2.25, 3.75, 2, 5 * Math.PI / 8, Math.PI);
+  //addFixedCurve(-3, -0.5, 1.25, Math.PI, -Math.PI / 2);
   // Right Channel Cap Arc
   addFixedCurve(3, 1.75, 1.25, 0, Math.PI / 2);
   addFixedCurve(3, -0.5, 1.25, -Math.PI / 2, 0);
   // Left Channel Arc
-  addFixedCurve(-0.25, 3.4, 4, Math.PI, -3 * Math.PI / 4);
+  //addFixedCurve(-0.25, 3.4, 4, Math.PI, -3 * Math.PI / 4);
   // Right Channel Arc
-  addFixedCurve(0.25, 3.4, 4, -Math.PI / 4, 0);
+  //addFixedCurve(0.25, 3.4, 4, -Math.PI / 4, 0);
   // Left Flipper Slope Arc
-  addFixedCurve(-1.67, 4, 1.7, Math.PI, -3 * Math.PI / 4);
+  //addFixedCurve(-1.67, 4, 1.7, Math.PI, -3 * Math.PI / 4);
   // Right Flipper Slope Arc
-  addFixedCurve(1.67, 4, 1.7, -Math.PI / 4, 0);
+  //addFixedCurve(1.67, 4, 1.7, -Math.PI / 4, 0);
   // Left Slingshot Arc
-  addFixedCurve(-2.02, 4, 0.5, Math.PI, -3 * Math.PI / 4);
+  //addFixedCurve(-2.02, 4, 0.5, Math.PI, -3 * Math.PI / 4);
   // Right Slingshot Arc
-  addFixedCurve(2.02, 4, 0.5, -Math.PI / 4, 0);
-  // Bottom Funnel Arc
-  addFixedCurve(0, 6.25, 2, -3 * Math.PI / 4, -Math.PI / 4);
+  //addFixedCurve(2.02, 4, 0.5, -Math.PI / 4, 0);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
@@ -278,22 +280,24 @@ async function main() {
   }
 
   // Flipper slopes
-  addSlope(2.85, 5.05, 1.5, 6.25); // Right
-  addSlope(-2.85, 5.05, -1.5, 6.25); // Left
+  addSlope(3.4, 5.1, 1.5, 6.25); // Right
+  addSlope(-3.4, 5.1, -1.5, 6.25); // Left
 
-  // Upper straight segments (inlanes)
-  addSlope(3.25, 2.0, 3.25, 4);       // Right
-  addSlope(-3.25, 2.0, -3.25, 4);      // Left
+  // Flipper upper slopes
+  addSlope(3.35, 3.5, 3.35, 5.2);       // Right
+  addSlope(-3.35, 3.5, -3.35, 5.2);      // Left
 
   // Slingshot slopes
-  addSlope(2.36, 4.2, 1.5, 4.95); // Right
-  addSlope(-2.36, 4.2, -1.5, 4.95); // Left
-  addSlope(2.4, 3, 2.4, 4);       // Right
-  addSlope(-2.4, 3, -2.4, 4);      // Left
+  addSlope(2.65, 4.5, 1.65, 5.1); // Right
+  addSlope(-2.65, 4.5, -1.65, 5.1); // Left
+
+  // Slingshot upper slopes
+  addSlope(2.6, 3.0, 2.6, 4.6);       // Right
+  addSlope(-2.6, 3.0, -2.6, 4.6);      // Left
 
   // Lower slopes (below flippers, guiding to drain)
-  addSlope(3.1, 6.04, 1.25, 7.65);       // Right
-  addSlope(-3.1, 6.04, -1.25, 7.65);      // Left
+  addSlope(4.15, 5.65, 1.5, 7.25);       // Right
+  addSlope(-4.15, 5.65, -1.5, 7.25);      // Left
 
   // --- Bumpers (fixed) ---
   // function addBumper(x: number, z: number, radius: number) {
@@ -374,9 +378,9 @@ async function main() {
   }
 
   // Right Slingshot
-  addSlingshot(2.36, 3.05, 1.53, 4.9);
+  addSlingshot(2.6, 3.0, 1.75, 5);
   // Left Slingshot
-  addSlingshot(-2.36, 3.05, -1.53, 4.9);
+  addSlingshot(-2.6, 3.0, -1.75, 5);
 
 
   // --- Flippers (dynamic, jointed) ---
@@ -411,7 +415,7 @@ async function main() {
   function addFlipper(isLeft: boolean) {
     const rBase = 0.15;
     const rTip = 0.05;
-    const length = 1.25;
+    const length = 1.2;
     const thickness = 0.4;
 
     // Distance between circle centers to achieve total visual length
@@ -419,7 +423,7 @@ async function main() {
     const dist = length - rBase - rTip;
 
     const direction = isLeft ? 1 : -1;
-    const pivot = new THREE.Vector3(isLeft ? -1.35 : 1.35, 0.3, 6.4);
+    const pivot = new THREE.Vector3(isLeft ? -1.35 : 1.35, 0.3, 6.37);
     const pivotPos = tiltedPos(pivot.x, pivot.y, pivot.z);
 
     const yaw = THREE.MathUtils.degToRad(isLeft ? 20 : -20);
@@ -487,7 +491,7 @@ async function main() {
     const joint = world.createImpulseJoint(jointData, pivotBody, body, true);
     const motorJoint = joint as MotorizedJoint;
 
-    const restAngle = direction * -0.85;
+    const restAngle = direction * -0.75;
     const fireAngle = direction * 0.2;
     const min = Math.min(restAngle, fireAngle) - 0.02;
     const max = Math.max(restAngle, fireAngle) + 0.02;
