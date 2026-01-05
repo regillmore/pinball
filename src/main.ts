@@ -132,7 +132,7 @@ async function main() {
   addWall(-(fieldW * 0.5 + wallT * 0.5), wallH * 0.5, 0, wallT, wallH, fieldL + wallT * 2);
 
   // Inner right wall (with gap at top)
-  const gap = 1.5; // Gap at the top (-Z end)
+  const gap = 2.75; // Gap at the top (-Z end)
   const fullWallL = fieldL + wallT * 2;
   const innerRightL = fullWallL - gap;
   const innerRightZ = gap / 2; // Shifted "down" (+Z) by half the gap
@@ -214,8 +214,9 @@ async function main() {
     );
   }
 
-  // Right Corner Arc
-  addFixedCurve(3.75, -6.75, 1.5, 0, Math.PI / 2);
+  // Right Corner Arcs
+  addFixedCurve(2.75, -6.75, 1.5, 0, Math.PI / 2);
+  addFixedCurve(4, -5.75, 1.25, 0, Math.PI / 2);
   // Left Corner Arc
   addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
   // Ball Lock Cap Arc
@@ -227,7 +228,7 @@ async function main() {
   // Right Channel Cap Arc
   addFixedCurve(2.25, 3.75, 2, 0, 3 * Math.PI / 8);
   // Right Mid Arc
-  addFixedCurve(-9.75, -4.75, 14, -4 * Math.PI / 32, 0);
+  addFixedCurve(-10.25, -4.9, 14.5, -4 * Math.PI / 32, 0);
   // Left Channel Arc
   //addFixedCurve(-0.25, 3.4, 4, Math.PI, -3 * Math.PI / 4);
   // Right Channel Arc
