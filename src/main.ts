@@ -220,7 +220,7 @@ async function main() {
   // Left Corner Arc
   addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
   // Ball Lock Cap Arc
-  addFixedCurve(4.55, -2.75, 8, Math.PI, -7 * Math.PI / 8);
+  addFixedCurve(10.25, -5.75, 14.5, Math.PI, -7 * Math.PI / 8);
   // Ball Lock Arc
   addFixedCurve(4.75, -2.12, 9, Math.PI, -27 * Math.PI / 32);
   // Left Channel Cap Arc
