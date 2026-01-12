@@ -219,6 +219,10 @@ async function main() {
   addFixedCurve(4, -5.75, 1.25, 0, Math.PI / 2);
   // Left Corner Arc
   addFixedCurve(-2.75, -6.75, 1.5, Math.PI / 2, Math.PI);
+  // Left Corner Ramp Arc
+  addFixedCurve(11.25, -6.75, 14.5, Math.PI, -7 * Math.PI / 8);
+  // Right Corner Ramp Arc
+  addFixedCurve(-11.25, -6.75, -14.5, 7 * Math.PI / 8, 31 * Math.PI / 32);
   // Ball Lock Cap Arc
   addFixedCurve(10.25, -5.75, 14.5, Math.PI, -7 * Math.PI / 8);
   // Ball Lock Arc
@@ -279,6 +283,8 @@ async function main() {
     mesh.position.copy(p);
     mesh.quaternion.copy(totalQ);
   }
+  // Back channel slope
+  addSlope(-3.25, -6.75, -0.5, -6.5);
 
   // Flipper slopes
   addSlope(3.4, 5.1, 1.5, 6.25); // Right
