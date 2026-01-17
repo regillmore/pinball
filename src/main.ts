@@ -1,6 +1,8 @@
 import "./style.css";
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d-compat";
+import { evaluate, initStrudel, samples } from "@strudel/web";
+import pinballHouse from "./pinball_house.js?raw";
 
 // --- DOM / HUD ---
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -9,6 +11,7 @@ app.innerHTML = `<div id="hud">
   <div>Space: launch</div>
   <div>←/→: flippers</div>
   <div>R: reset</div>
+  <div>Click to enable audio</div>
 </div>`;
 
 // --- Three.js setup ---
@@ -49,10 +52,26 @@ function addMesh(mesh: THREE.Object3D) {
   return mesh;
 }
 
+let musicStarted = false;
+
+async function startBackgroundMusic() {
+  if (musicStarted) {
+    return;
+  }
+  musicStarted = true;
+  await initStrudel({
+    prebake: () => samples("github:tidalcycles/dirt-samples"),
+  });
+  await evaluate(pinballHouse);
+}
+
 // --- Main ---
 async function main() {
   // Rapier compat package embeds WASM and needs init(). :contentReference[oaicite:5]{index=5}
   await RAPIER.init();
+  void startBackgroundMusic().catch((error) => {
+    console.error("Failed to start background music.", error);
+  });
 
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   const eventQueue = new RAPIER.EventQueue(true);

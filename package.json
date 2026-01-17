@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.3",
+    "@strudel/web": "^1.2.6",
     "three": "^0.182.0"
   }
 }
