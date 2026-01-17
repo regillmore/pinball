@@ -53,25 +53,51 @@ function addMesh(mesh: THREE.Object3D) {
 }
 
 let musicStarted = false;
+let musicStarting = false;
 
 async function startBackgroundMusic() {
-  if (musicStarted) {
+  if (musicStarted || musicStarting) {
     return;
   }
-  musicStarted = true;
-  await initStrudel({
-    prebake: () => samples("github:tidalcycles/dirt-samples"),
-  });
-  await evaluate(pinballHouse);
+  musicStarting = true;
+  try {
+    await initStrudel({
+      prebake: () => samples("github:tidalcycles/dirt-samples"),
+    });
+    await evaluate(pinballHouse);
+    musicStarted = true;
+    const audioHint = document.querySelector<HTMLDivElement>("#audio-hint");
+    if (audioHint) {
+      audioHint.textContent = "Audio enabled";
+    }
+  } catch (error) {
+    musicStarting = false;
+    throw error;
+  }
+}
+
+function registerAudioUnlock() {
+  const handler = () => {
+    void startBackgroundMusic()
+      .then(() => {
+        window.removeEventListener("pointerdown", handler);
+        window.removeEventListener("keydown", handler);
+      })
+      .catch((error) => {
+        console.error("Failed to start background music.", error);
+      });
+  };
+
+  window.addEventListener("pointerdown", handler);
+  window.addEventListener("keydown", handler);
+
 }
 
 // --- Main ---
 async function main() {
   // Rapier compat package embeds WASM and needs init(). :contentReference[oaicite:5]{index=5}
   await RAPIER.init();
-  void startBackgroundMusic().catch((error) => {
-    console.error("Failed to start background music.", error);
-  });
+  registerAudioUnlock();
 
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   const eventQueue = new RAPIER.EventQueue(true);

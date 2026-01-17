@@ -1,13 +1,13 @@
 // House-ish pinball loop (64 bars = 2 minutes @ 128 BPM)
 // Paste into https://strudel.cc and hit Ctrl/Cmd+Enter
 
-setcpm(128/4) // 128 BPM in 4/4 (4 beats per cycle)
+setcpm(128 / 4) // 128 BPM in 4/4 (4 beats per cycle)
 
 // ---------- DRUMS (909-ish) ----------
-const KICK = s("bd*4").gain(1.05)
-const CLAP = s("~ cp ~ cp").gain(0.85)
-const HHC  = s("hh*8").gain(0.33)
-const HHO  = s("~ 808oh ~ 808oh").gain(0.22).clip(0.20)
+const KICK = s("bd*4").gain(0.5)
+const CLAP = s("~ cp ~ cp").gain(0.5)
+const HHC = s("hh*8").gain(0.33)
+const HHO = s("~ 808oh ~ 808oh").gain(0.22).clip(0.20)
 const PERC = s("<~ [mt lt] ~ [mt lt]>")
   .gain(0.18)
   .degradeBy(0.25)
@@ -47,7 +47,6 @@ const LEAD = n("<0 2 4 7 9 7 4 2>")
   .clip(0.12)
   .lpf(1800)
   .gain(0.18)
-  .every(4, x => x.add(12)) // occasional octave pop
   .orbit(2)
   .delay(0.30).delaytime(0.125).delayfeedback(0.30)
   .room(0.25).roomsize(3.5)
@@ -55,7 +54,7 @@ const LEAD = n("<0 2 4 7 9 7 4 2>")
 // ---------- 64 BAR FORM ----------
 const kickForm = arrange(
   [32, KICK],
-  [8,  silence], // breakdown
+  [8, silence], // breakdown
   [24, KICK]
 )
 
@@ -75,7 +74,7 @@ const DUCKER = s("bd*4")
 
 const song = stack(
   drumsForm,
-  arrange([8,  silence], [24, BASS], [8, silence], [24, BASS]),
+  arrange([8, silence], [24, BASS], [8, silence], [24, BASS]),
   arrange([16, silence], [16, CHORDS], [8, CHORDS.lpf(600)], [24, CHORDS]),
   arrange([24, silence], [24, LEAD], [16, silence]),
   DUCKER
