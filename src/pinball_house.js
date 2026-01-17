@@ -4,12 +4,11 @@
 setcpm(128/4) // 128 BPM in 4/4 (4 beats per cycle)
 
 // ---------- DRUMS (909-ish) ----------
-const KICK = s("bd*4").bank("RolandTR909").gain(1.05)
-const CLAP = s("~ cp ~ cp").bank("RolandTR909").gain(0.85)
-const HHC  = s("hh*8").bank("RolandTR909").gain(0.33)
-const HHO  = s("~ oh ~ oh").bank("RolandTR909").gain(0.22).clip(0.20)
+const KICK = s("bd*4").gain(1.05)
+const CLAP = s("~ cp ~ cp").gain(0.85)
+const HHC  = s("hh*8").gain(0.33)
+const HHO  = s("~ 808oh ~ 808oh").gain(0.22).clip(0.20)
 const PERC = s("<~ [mt lt] ~ [mt lt]>")
-  .bank("RolandTR909")
   .gain(0.18)
   .degradeBy(0.25)
 
@@ -69,7 +68,6 @@ const drumsForm = stack(
 
 // sidechain-ish pump: silent kick that ducks orbit 2
 const DUCKER = s("bd*4")
-  .bank("RolandTR909")
   .postgain(0)
   .duckorbit(2)
   .duckattack(0.18)
