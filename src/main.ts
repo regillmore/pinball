@@ -3,6 +3,7 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d-compat";
 import { evaluate, initStrudel, samples } from "@strudel/web";
 import pinballHouse from "./pinball_house.js?raw";
+import introHouse from "./intro_house.js?raw";
 
 // --- DOM / HUD ---
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -54,6 +55,7 @@ function addMesh(mesh: THREE.Object3D) {
 
 let musicStarted = false;
 let musicStarting = false;
+let isIntroPlaying = false;
 
 async function startBackgroundMusic() {
   if (musicStarted || musicStarting) {
@@ -64,8 +66,9 @@ async function startBackgroundMusic() {
     await initStrudel({
       prebake: () => samples("github:tidalcycles/dirt-samples"),
     });
-    await evaluate(pinballHouse);
+    await evaluate(introHouse);
     musicStarted = true;
+    isIntroPlaying = true;
     const audioHint = document.querySelector<HTMLDivElement>("#audio-hint");
     if (audioHint) {
       audioHint.textContent = "Audio enabled";
@@ -597,6 +600,11 @@ async function main() {
   function launchBall() {
     // impulse mostly -Z to launch up the plunger lane
     ballBody.applyImpulse({ x: 0, y: 0.0, z: -1.0 }, true);
+
+    if (musicStarted && isIntroPlaying) {
+      evaluate(pinballHouse);
+      isIntroPlaying = false;
+    }
   }
 
   window.addEventListener("keydown", (e) => {
