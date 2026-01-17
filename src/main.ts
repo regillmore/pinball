@@ -1,6 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d-compat";
+import { buildPinballHouseSong } from "./pinball_house.js";
 
 // --- DOM / HUD ---
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -9,6 +10,7 @@ app.innerHTML = `<div id="hud">
   <div>Space: launch</div>
   <div>←/→: flippers</div>
   <div>R: reset</div>
+  <div>Click or press a key: start music</div>
 </div>`;
 
 // --- Three.js setup ---
@@ -48,6 +50,30 @@ function addMesh(mesh: THREE.Object3D) {
   scene.add(mesh);
   return mesh;
 }
+
+type StrudelSong = { play?: () => void };
+
+let backgroundMusicPromise: Promise<void> | null = null;
+
+async function startBackgroundMusic() {
+  const strudelModulePath = "@strudel.cy/strudel";
+  const { initStrudel } = await import(/* @vite-ignore */ strudelModulePath);
+  const strudelApi = await initStrudel();
+  const song = buildPinballHouseSong(strudelApi as Record<string, unknown>) as StrudelSong;
+  if (song?.play) {
+    song.play();
+  }
+}
+
+function requestBackgroundMusicStart() {
+  if (backgroundMusicPromise) return;
+  backgroundMusicPromise = startBackgroundMusic().catch((err) => {
+    console.error("Background music failed to start.", err);
+  });
+}
+
+window.addEventListener("pointerdown", requestBackgroundMusicStart, { once: true });
+window.addEventListener("keydown", requestBackgroundMusicStart, { once: true });
 
 // --- Main ---
 async function main() {
