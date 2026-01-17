@@ -84,7 +84,6 @@ function registerAudioUnlock() {
     void startBackgroundMusic()
       .then(() => {
         window.removeEventListener("pointerdown", handler);
-        window.removeEventListener("keydown", handler);
       })
       .catch((error) => {
         console.error("Failed to start background music.", error);
@@ -92,7 +91,6 @@ function registerAudioUnlock() {
   };
 
   window.addEventListener("pointerdown", handler);
-  window.addEventListener("keydown", handler);
 
 }
 
