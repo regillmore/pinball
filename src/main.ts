@@ -230,9 +230,7 @@ async function main() {
     const offsetX = (wallT + plungerW) / 2;
 
     const collider = RAPIER.ColliderDesc.cuboid(totalW * 0.5, 0.1, fieldL * 0.5)
-      .setTranslation(offsetX, 0, 0)
-      .setFriction(0.1)
-      .setRestitution(0.25);
+      .setTranslation(offsetX, 0, 0);
     world.createCollider(collider, body);
 
     const geo = new THREE.BoxGeometry(totalW, 0.2, fieldL);
@@ -253,9 +251,7 @@ async function main() {
     );
 
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5)
-        .setFriction(0.1)
-        .setRestitution(0.25),
+      RAPIER.ColliderDesc.cuboid(sx * 0.5, sy * 0.5, sz * 0.5),
       body
     );
 
@@ -347,12 +343,7 @@ async function main() {
       for (let i = 0; i < count; i++) finalIndices[i] = i;
     }
 
-    world.createCollider(
-      RAPIER.ColliderDesc.trimesh(vertices, finalIndices)
-        .setFriction(0.1)
-        .setRestitution(0.25),
-      body
-    );
+    world.createCollider(RAPIER.ColliderDesc.trimesh(vertices, finalIndices), body);
   }
 
   // Right Corner Arcs
@@ -409,9 +400,7 @@ async function main() {
 
     const wT = 0.25;
     world.createCollider(
-      RAPIER.ColliderDesc.cuboid(wT * 0.5, slopeH * 0.5, length * 0.5)
-        .setFriction(0.1)
-        .setRestitution(0.25),
+      RAPIER.ColliderDesc.cuboid(wT * 0.5, slopeH * 0.5, length * 0.5),
       body
     );
 
@@ -503,8 +492,6 @@ async function main() {
     const wT = 0.25;
     const collider = world.createCollider(
       RAPIER.ColliderDesc.cuboid(wT * 0.5, slingshotH * 0.5, length * 0.5)
-        .setFriction(0.1)
-        .setRestitution(0.5)
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
       body
     );
@@ -611,8 +598,6 @@ async function main() {
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(pivotPos.x, pivotPos.y, pivotPos.z)
         .setRotation(flipperR)
-        //.setLinearDamping(0.6)
-        //.setAngularDamping(2.0)
         .setCcdEnabled(true)
         .setCanSleep(false)
     );
@@ -621,9 +606,7 @@ async function main() {
     const vertices = new Float32Array(geometry.attributes.position.array);
     world.createCollider(
       RAPIER.ColliderDesc.convexHull(vertices)!
-        .setFriction(0.1)
-        .setDensity(50.0)
-        .setRestitution(0.25),
+        .setDensity(50.0),
       body
     );
 
@@ -673,8 +656,7 @@ async function main() {
 
   const ballCollider = world.createCollider(
     RAPIER.ColliderDesc.ball(ballRadius)
-      .setFriction(0.1)
-      .setRestitution(0.25)
+      .setDensity(2.0)
       .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     ballBody
   );
