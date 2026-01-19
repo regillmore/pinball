@@ -12,7 +12,7 @@ app.innerHTML = `<div id="hud">
   <div>Space: launch</div>
   <div>←/→: flippers</div>
   <div>R: reset</div>
-  <div>Click to enable audio</div>
+  <div id="audio-hint">Click to enable audio</div>
 </div>`;
 
 // --- Three.js setup ---
@@ -57,6 +57,94 @@ let musicStarted = false;
 let musicStarting = false;
 let isIntroPlaying = false;
 
+type SfxEngine = {
+  unlock: () => Promise<void>;
+  playFlipper: (side: "left" | "right") => void;
+  playKicker: () => void;
+};
+
+function createSfxEngine(): SfxEngine {
+  const AudioContextCtor =
+    window.AudioContext ??
+    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  let context: AudioContext | null = null;
+  let unlocked = false;
+
+  async function ensureContext() {
+    if (!AudioContextCtor) {
+      return;
+    }
+    if (!context) {
+      context = new AudioContextCtor();
+    }
+    if (context.state === "suspended") {
+      await context.resume();
+    }
+    unlocked = context.state === "running";
+  }
+
+  function playTone({
+    frequency,
+    frequencyEnd,
+    gain,
+    duration,
+    type,
+  }: {
+    frequency: number;
+    frequencyEnd?: number;
+    gain: number;
+    duration: number;
+    type: OscillatorType;
+  }) {
+    if (!context || !unlocked) return;
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, now);
+    if (frequencyEnd && frequencyEnd !== frequency) {
+      oscillator.frequency.exponentialRampToValueAtTime(
+        frequencyEnd,
+        now + duration
+      );
+    }
+
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(gain, now + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    oscillator.connect(gainNode).connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.02);
+  }
+
+  return {
+    unlock: ensureContext,
+    playFlipper: (side) => {
+      if (!context || !unlocked) return;
+      playTone({
+        frequency: side === "left" ? 820 : 760,
+        frequencyEnd: 240,
+        gain: 0.18,
+        duration: 0.07,
+        type: "square",
+      });
+    },
+    playKicker: () => {
+      playTone({
+        frequency: 220,
+        frequencyEnd: 90,
+        gain: 0.22,
+        duration: 0.11,
+        type: "triangle",
+      });
+    },
+  };
+}
+
+const sfxEngine = createSfxEngine();
+
 async function startBackgroundMusic() {
   if (musicStarted || musicStarting) {
     return;
@@ -81,13 +169,20 @@ async function startBackgroundMusic() {
 
 function registerAudioUnlock() {
   const handler = () => {
-    void startBackgroundMusic()
-      .then(() => {
-        window.removeEventListener("pointerdown", handler);
-      })
-      .catch((error) => {
+    void Promise.all([
+      startBackgroundMusic().catch((error) => {
         console.error("Failed to start background music.", error);
-      });
+      }),
+      sfxEngine.unlock().catch((error) => {
+        console.error("Failed to start SFX audio.", error);
+      }),
+    ]).finally(() => {
+      const audioHint = document.querySelector<HTMLDivElement>("#audio-hint");
+      if (audioHint) {
+        audioHint.textContent = "Audio enabled";
+      }
+      window.removeEventListener("pointerdown", handler);
+    });
   };
 
   window.addEventListener("pointerdown", handler);
@@ -609,11 +704,13 @@ async function main() {
     if (e.code === "Space") launchBall();
     if (e.code === "KeyR") resetBall();
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
+      sfxEngine.playFlipper("left");
       for (const f of flippers) {
         if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
+      sfxEngine.playFlipper("right");
       for (const f of flippers) {
         if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
       }
@@ -736,6 +833,7 @@ async function main() {
               y: normal.y * strength,
               z: normal.z * strength
             }, true);
+            sfxEngine.playKicker();
 
             // Light up effect
             const mesh = kickerMeshes.get(otherHandle);
