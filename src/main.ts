@@ -365,18 +365,6 @@ async function main() {
   addFixedCurve(2.25, 3.75, 2, 0, 3 * Math.PI / 8);
   // Right Mid Arc
   addFixedCurve(-10.25, -4.9, 14.5, -4 * Math.PI / 32, 0);
-  // Left Channel Arc
-  //addFixedCurve(-0.25, 3.4, 4, Math.PI, -3 * Math.PI / 4);
-  // Right Channel Arc
-  //addFixedCurve(0.25, 3.4, 4, -Math.PI / 4, 0);
-  // Left Flipper Slope Arc
-  //addFixedCurve(-1.67, 4, 1.7, Math.PI, -3 * Math.PI / 4);
-  // Right Flipper Slope Arc
-  //addFixedCurve(1.67, 4, 1.7, -Math.PI / 4, 0);
-  // Left Slingshot Arc
-  //addFixedCurve(-2.02, 4, 0.5, Math.PI, -3 * Math.PI / 4);
-  // Right Slingshot Arc
-  //addFixedCurve(2.02, 4, 0.5, -Math.PI / 4, 0);
 
   // --- Slopes (funnel) ---
   function addSlope(x1: number, z1: number, x2: number, z2: number) {
@@ -439,34 +427,6 @@ async function main() {
   addSlope(4.15, 5.65, 1.5, 7.25);       // Right
   addSlope(-4.15, 5.65, -1.5, 7.25);      // Left
 
-  // --- Bumpers (fixed) ---
-  // function addBumper(x: number, z: number, radius: number) {
-  //   const p = tiltedPos(x, 0.35, z);
-
-  //   const body = world.createRigidBody(
-  //     RAPIER.RigidBodyDesc.fixed()
-  //       .setTranslation(p.x, p.y, p.z)
-  //       .setRotation(tiltR)
-  //   );
-
-  //   world.createCollider(
-  //     RAPIER.ColliderDesc.ball(radius).setRestitution(0.95).setFriction(0.2),
-  //     body
-  //   );
-
-  //   const mesh = addMesh(
-  //     new THREE.Mesh(
-  //       new THREE.SphereGeometry(radius, 24, 16),
-  //       new THREE.MeshStandardMaterial({ metalness: 0.2, roughness: 0.4 })
-  //     )
-  //   );
-  //   mesh.position.copy(p);
-  //   mesh.quaternion.copy(tiltQ);
-  // }
-
-  //addBumper(-2.0, 1.0, 0.45);
-  //addBumper(+2.0, 2.5, 0.45);
-
   // --- Slingshots (Kickers) ---
   const kickers = new Set<number>(); // Store collider handles
   const kickerMeshes = new Map<number, THREE.Mesh>(); // Store mesh for each collider handle
@@ -519,7 +479,6 @@ async function main() {
   addSlingshot(2.6, 3.0, 1.75, 5);
   // Left Slingshot
   addSlingshot(-2.6, 3.0, -1.75, 5);
-
 
   // --- Flippers (dynamic, jointed) ---
   type MotorizedJoint = RAPIER.ImpulseJoint & {
@@ -650,8 +609,6 @@ async function main() {
     RAPIER.RigidBodyDesc.dynamic()
       .setTranslation((fieldW * 0.5) + wallT + (plungerW * 0.5), 1.0, (fieldL * 0.5) - 0.5)
       .setCcdEnabled(true)
-    //.setLinearDamping(0.1)
-    //.setAngularDamping(0.1)
   );
 
   const ballCollider = world.createCollider(
@@ -682,30 +639,41 @@ async function main() {
     }
   }
 
+  let leftFlipperPressed = false;
+  let rightFlipperPressed = false;
+
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space") launchBall();
     if (e.code === "KeyR") resetBall();
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
-      sfxEngine.playFlipper("left");
-      for (const f of flippers) {
-        if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
+      if (!leftFlipperPressed) {
+        leftFlipperPressed = true;
+        sfxEngine.playFlipper("left");
+        for (const f of flippers) {
+          if (f.restAngle < 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
+        }
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
-      sfxEngine.playFlipper("right");
-      for (const f of flippers) {
-        if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
+      if (!rightFlipperPressed) {
+        rightFlipperPressed = true;
+        sfxEngine.playFlipper("right");
+        for (const f of flippers) {
+          if (f.restAngle > 0) f.joint.configureMotorPosition(f.fireAngle, 1250, 50);
+        }
       }
     }
   });
 
   window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") {
+      leftFlipperPressed = false;
       for (const f of flippers) {
         if (f.restAngle < 0) f.joint.configureMotorPosition(f.restAngle, 1250, 50);
       }
     }
     if (e.code === "ArrowRight" || e.code === "KeyD") {
+      rightFlipperPressed = false;
       for (const f of flippers) {
         if (f.restAngle > 0) f.joint.configureMotorPosition(f.restAngle, 1250, 50);
       }
