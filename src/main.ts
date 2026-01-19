@@ -124,11 +124,11 @@ function createSfxEngine(): SfxEngine {
     playFlipper: (side) => {
       if (!context || !unlocked) return;
       playTone({
-        frequency: side === "left" ? 820 : 760,
-        frequencyEnd: 240,
+        frequency: side === "left" ? 40 : 50,
+        frequencyEnd: 40,
         gain: 0.18,
         duration: 0.07,
-        type: "square",
+        type: "triangle",
       });
     },
     playKicker: () => {
@@ -613,7 +613,8 @@ async function main() {
 
   const ballCollider = world.createCollider(
     RAPIER.ColliderDesc.ball(ballRadius)
-      .setDensity(2.0)
+      .setDensity(1.5)
+      .setRestitution(0.5)
       .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     ballBody
   );
@@ -683,7 +684,10 @@ async function main() {
   // --- Mouse Drag ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
-  const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.0); // Plane at y=1.0
+  const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+    new THREE.Vector3(0, 1, 0).applyQuaternion(tiltQ),
+    tiltedPos(0, 1.0, 0)
+  );
   let isDragging = false;
 
   window.addEventListener("pointerdown", (e) => {
@@ -712,7 +716,7 @@ async function main() {
 
     const target = new THREE.Vector3();
     if (raycaster.ray.intersectPlane(dragPlane, target)) {
-      ballBody.setTranslation({ x: target.x, y: 1.0, z: target.z }, true);
+      ballBody.setTranslation({ x: target.x, y: target.y, z: target.z }, true);
       ballBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
       ballBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
