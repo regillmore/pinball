@@ -126,7 +126,7 @@ function createSfxEngine(): SfxEngine {
       playTone({
         frequency: side === "left" ? 40 : 50,
         frequencyEnd: 40,
-        gain: 0.18,
+        gain: 0.40,
         duration: 0.07,
         type: "triangle",
       });
@@ -205,7 +205,7 @@ async function main() {
   const slopeH = wallH - 0.05;
   const slingshotH = slopeH - 0.05;
   const wallT = 0.25;
-  const plungerW = 0.75;
+  const plungerW = 0.70;
 
   // Tilt the playfield slightly so the ball rolls “down” +Z
   const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(6.5), 0, 0));
